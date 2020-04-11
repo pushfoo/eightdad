@@ -145,48 +145,55 @@ class Chip8Instruction:
     """
     PATTERN_MAP = FIRST_NIBBLE_TO_PATTERN
 
-    def __init__(self, source=None):
-        self._raw = 0
+    def __init__(self):
 
         self.pattern = 0
         self.type_nibble = 0
 
+        self.hi_byte = 0
+        self.lo_byte = 0
+
         self._x = None
         self._y = None
-        self._kk = None
         self._nnn = None
+        self._n = None
 
-        if source:
-            self.raw = source
 
-    @property
-    def raw(self):
-        return self._raw
+    def decode(self, source: bytes, offset: int = 0):
+        """
+        Decode an instruction from the passed bytes-like object
 
-    @raw.setter
-    def raw(self, raw : int):
+        :param source: the bytes-like object to read from
+        :param offset: how far into the code to start reading
 
-        self.type_nibble = (raw & 0xF000) >> 12
-        pattern = self.__class__.PATTERN_MAP[self.type_nibble]
+        :return:
+        """
+
+        self.lo_byte = source[offset]
+        self.hi_byte = source[offset+1]
+
+        self.type_nibble = (self.hi_byte & 0xF0) >> 4
+
+        if self.type_nibble not in self.PATTERN_MAP:
+            raise ValueError(f"Illegal instruction header {hex(self.type_nibble)}")
+
+        pattern = self.PATTERN_MAP[self.type_nibble]
         self.pattern = pattern
 
-        if pattern:
+        if pattern == PATTERN_INNN:
+            self._nnn = self.lo_byte
+            self._nnn |= (self.hi_byte & 0xF) << 8
 
-            if pattern == PATTERN_INNN:
-                self._nnn = raw & 0xFFF
+        else:
+            if pattern & USES_X:
+                self._x = self.hi_byte & 0xF
 
-            else:
-                if pattern & USES_X:
-                    self._x = (raw & 0x0F00) >> 8
+            if not pattern & USES_KK:
+                if pattern & USES_Y:
+                    self._y = (self.lo_byte & 0xF0) >> 4
 
-                if pattern & USES_KK:
-                    self._kk = raw & 0xFF
-                else:
-                    if pattern & USES_Y:
-                        self._y = (raw & 0xF0) >> 4
-
-                    if pattern & USES_N:
-                        self._n = raw & 0xF
+                if pattern & USES_N:
+                    self._n = self.lo_byte & 0xF
 
     def access_check(self, usage: int) -> AttributeError:
         if not self.pattern & usage:
@@ -216,7 +223,7 @@ class Chip8Instruction:
     @property
     def kk(self) -> int:
         self.access_check(USES_KK)
-        return self._kk
+        return self.lo_byte
 
     @property
     def n(self) -> int:

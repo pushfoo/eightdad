@@ -1,6 +1,9 @@
 import pytest
+from struct import Struct
 from eightdad.core.bytecode import Chip8Instruction as Instruction
 
+
+INSTRUCTION_STRUCT = Struct("<H")
 
 # class TestInit:
 #
@@ -82,7 +85,7 @@ class TestReadAccess:
         "raw_instruction,components",
         INSTRUCTION_AND_FIELDS
     )
-    def test_varless_instructions_goodvars(self, raw_instruction, components):
+    def test_instructions_reading_goodvars(self, raw_instruction, components):
         """
         Test whether decode of instructions sets attrs correctly
 
@@ -90,7 +93,9 @@ class TestReadAccess:
         :param components: what the components should be set to
         :return:
         """
-        instruction = Instruction(raw_instruction)
+        instruction = Instruction()
+
+        instruction.decode(INSTRUCTION_STRUCT.pack(raw_instruction))
 
         for varname, expected_value in components.items():
             assert getattr(instruction, varname) == expected_value
@@ -101,9 +106,11 @@ class TestReadAccess:
     )
     def test_access_exceptions_on_patterns(self, raw_instruction, good_fields):
         """Exceptions are raised on access attempts for dissallowed fields"""
-        instruction = Instruction(raw_instruction)
+        instruction = Instruction()
+
+        instruction.decode(INSTRUCTION_STRUCT.pack(raw_instruction))
+
         for field in INSTRUCTION_FIELDS:
             if field not in good_fields:
                 with pytest.raises(AttributeError):
                     getattr(instruction, field)
-

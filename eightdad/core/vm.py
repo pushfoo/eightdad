@@ -1,13 +1,15 @@
-from struct import Struct
-from typing import Tuple, List
+"""
+Core VM-related functionality for executing programs
 
+Timer and VM are implemented here.
+
+"""
+from typing import Tuple, List
 from eightdad.core.bytecode import (
     PATTERN_IXII,
 )
 from eightdad.core.bytecode import Chip8Instruction
 from eightdad.core.video import VideoRam, DEFAULT_DIGITS
-
-INSTRUCTION_STRUCT = Struct("<H")
 
 
 class Timer:
@@ -50,7 +52,7 @@ class Chip8VirtualMachine:
 
         :param source: the list of bytes objects to load from.
         :param location: where in memory to load the data
-        :return:
+        :return: None
         """
         self.digits_memory_location = location
         self.digit_length = max(map(len, source))
@@ -70,7 +72,7 @@ class Chip8VirtualMachine:
             memory_size: int = 4096,
             execution_start: int = 0x200,
             digit_start: int = 0x0,
-            ticks_per_second : int = 200
+            ticks_per_second: int = 200
     ):
         # initialize display-related functionality
         self.memory = bytearray(memory_size)
@@ -96,7 +98,6 @@ class Chip8VirtualMachine:
         self.ticks_per_second = ticks_per_second
         self.tick_length = 1.0 / ticks_per_second
 
-
         self.instruction_parser = Chip8Instruction()
 
     @property
@@ -117,17 +118,7 @@ class Chip8VirtualMachine:
 
     def handle_ixii(self):
         """
-            Fx07 - LD Vx, DT - Set Vx = DT
-            Fx15 - LD DT, Vx - Set DT = vX
-            Fx18 - LD ST, Vx - Set ST = Vx.
-
-            setting dt to a value works
-            setting st to a value works
-
-            decrement of timers works
-
-            setting vx to a value works (parametrize this test)
-
+        Execute timer-related instructions
         """
         last_byte = self.memory[self.program_counter]
         x = self.instruction_parser.x
@@ -143,10 +134,9 @@ class Chip8VirtualMachine:
 
         self.program_increment += 1
 
-
     def tick(self, dt: float) -> None:
         """
-        Execute a suingle instruction at the allotted speed.
+        Execute a single instruction at the allotted speed.
 
         The length is specified so the timers know how fast to decrement.
 
@@ -164,20 +154,12 @@ class Chip8VirtualMachine:
         self._sound_timer.tick(dt)
 
         # start interpretation
-        raw_bytes = self.memory[self.program_counter:self.program_counter+2]
-        self.instruction_parser.raw = INSTRUCTION_STRUCT.unpack(raw_bytes)[0]
+        self.instruction_parser.decode(self.memory, self.program_counter)
 
         if self.instruction_parser.pattern == PATTERN_IXII:
             self.handle_ixii()
         else:
             raise NotImplementedError("Instruction not yet supported")
 
-        #advance by any amount we need to
+        # advance by any amount we need to
         self.program_counter += self.program_increment
-
-
-# vm = Chip8VirtualMachine(memory_size=2048)
-# vm.memory[512] = 0x07
-# vm.memory[513] = 0xF0 | 1
-# vm.tick(0.0025)
-# print(len(vm.memory))
