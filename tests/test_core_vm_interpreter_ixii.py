@@ -40,8 +40,8 @@ def prep_and_execute_ixii_instruction(
     if load_point != EXECUTION_START:
         vm.program_counter = load_point
 
-    vm.memory[load_point] = lo_byte
-    vm.memory[load_point + 1] = type_nibble | x_value
+    vm.memory[load_point + 1] = lo_byte
+    vm.memory[load_point] = type_nibble | x_value
     vm.tick(TWO_HUNDREDTH)
 
 

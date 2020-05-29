@@ -57,7 +57,7 @@ PATTERN_IXYN
     Dxyn - DRW Vx, Vy, nibble - draw sprite to ram
 
 """
-from typing import Iterable, Dict
+from typing import Iterable, Dict, ByteString, Any, Union
 
 #
 USES_NNN = 0x1
@@ -137,6 +137,8 @@ class InvalidInstructionException(Exception):
     pass
 
 
+IntOrByteString = Union[int, ByteString]
+
 class Chip8Instruction:
     """
 
@@ -145,21 +147,30 @@ class Chip8Instruction:
     """
     PATTERN_MAP = FIRST_NIBBLE_TO_PATTERN
 
-    def __init__(self):
+    def __init__(
+            self,
+            source: IntOrByteString = None,
+            offset: int = 0
+    ):
 
         self.pattern = 0
         self.type_nibble = 0
 
-        self.hi_byte = 0
-        self.lo_byte = 0
+        self._hi_byte = 0
+        self._lo_byte = 0
 
         self._x = None
         self._y = None
         self._nnn = None
         self._n = None
 
+        if source is not None:
+            if isinstance(source, int):
+                self.decode(source.to_bytes(2, "big"), 0)
+            else:
+                self.decode(source, offset)
 
-    def decode(self, source: bytes, offset: int = 0):
+    def decode(self, source: ByteString, offset: int = 0):
         """
         Decode an instruction from the passed bytes-like object
 
@@ -169,10 +180,10 @@ class Chip8Instruction:
         :return:
         """
 
-        self.lo_byte = source[offset]
-        self.hi_byte = source[offset+1]
+        self._lo_byte = source[offset + 1]
+        self._hi_byte = source[offset]
 
-        self.type_nibble = (self.hi_byte & 0xF0) >> 4
+        self.type_nibble = (self._hi_byte & 0xF0) >> 4
 
         if self.type_nibble not in self.PATTERN_MAP:
             raise ValueError(f"Illegal instruction header {hex(self.type_nibble)}")
@@ -181,19 +192,19 @@ class Chip8Instruction:
         self.pattern = pattern
 
         if pattern == PATTERN_INNN:
-            self._nnn = self.lo_byte
-            self._nnn |= (self.hi_byte & 0xF) << 8
+            self._nnn = self._lo_byte
+            self._nnn |= (self._hi_byte & 0xF) << 8
 
         else:
             if pattern & USES_X:
-                self._x = self.hi_byte & 0xF
+                self._x = self._hi_byte & 0xF
 
             if not pattern & USES_KK:
                 if pattern & USES_Y:
-                    self._y = (self.lo_byte & 0xF0) >> 4
+                    self._y = (self._lo_byte & 0xF0) >> 4
 
                 if pattern & USES_N:
-                    self._n = self.lo_byte & 0xF
+                    self._n = self._lo_byte & 0xF
 
     def access_check(self, usage: int) -> AttributeError:
         if not self.pattern & usage:
@@ -203,12 +214,17 @@ class Chip8Instruction:
                 f" on instruction on {hex(self.raw)[2:].upper()}")
 
     @property
+    def hi_byte(self) -> int:
+        return self._hi_byte
+
+    @property
+    def lo_byte(self) -> int:
+        return self._lo_byte
+
+    @property
     def nnn(self) -> int:
         self.access_check(USES_NNN)
         return self._nnn
-
-    # @nnn.setter(self, nnn):
-    #     self.access_check
 
     @property
     def x(self) -> int:
@@ -223,7 +239,7 @@ class Chip8Instruction:
     @property
     def kk(self) -> int:
         self.access_check(USES_KK)
-        return self.lo_byte
+        return self._lo_byte
 
     @property
     def n(self) -> int:

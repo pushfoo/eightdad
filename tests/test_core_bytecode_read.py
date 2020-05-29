@@ -3,13 +3,6 @@ from struct import Struct
 from eightdad.core.bytecode import Chip8Instruction as Instruction
 
 
-INSTRUCTION_STRUCT = Struct("<H")
-
-# class TestInit:
-#
-#     def test_no_raw_value_passed(self):
-#
-
 INSTRUCTION_FIELDS = ['type_nibble', 'nnn', 'x', 'nn', 'y', 'kk',  'n']
 
 INSTRUCTION_AND_FIELDS = [
@@ -95,7 +88,7 @@ class TestReadAccess:
         """
         instruction = Instruction()
 
-        instruction.decode(INSTRUCTION_STRUCT.pack(raw_instruction))
+        instruction.decode(raw_instruction.to_bytes(2, byteorder="big"))
 
         for varname, expected_value in components.items():
             assert getattr(instruction, varname) == expected_value
@@ -108,7 +101,7 @@ class TestReadAccess:
         """Exceptions are raised on access attempts for dissallowed fields"""
         instruction = Instruction()
 
-        instruction.decode(INSTRUCTION_STRUCT.pack(raw_instruction))
+        instruction.decode(raw_instruction.to_bytes(2, byteorder="big"))
 
         for field in INSTRUCTION_FIELDS:
             if field not in good_fields:
