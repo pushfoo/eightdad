@@ -136,6 +136,18 @@ class Chip8VirtualMachine:
             self.i_register = self.digits_memory_location +\
                               (digit * self.digit_length)
 
+        # Store BCD of Vx at I, I+1, I+2
+        elif lo_byte == 0x33:
+            reg_value = self.v_registers[x]
+
+            ones = reg_value % 10
+            tens = ((reg_value - ones) % 100) // 10
+            hundreds = reg_value // 100
+
+            self.memory[self.i_register] = hundreds
+            self.memory[self.i_register + 1] = tens
+            self.memory[self.i_register + 2] = ones
+
         else:
             raise NotImplementedError("Instruction not yet supported")
 
