@@ -28,7 +28,6 @@ def prep_and_execute_ixii_instruction(
     """
     vm.memory[EXECUTION_START] = lo_byte
     vm.memory[EXECUTION_START + 1] = type_nibble | x_value
-    print("start+1", hex(vm.memory[EXECUTION_START+1]))
     vm.tick(TWO_HUNDREDTH)
 
 
@@ -137,4 +136,41 @@ def test_fx29_load_digit_address_to_i(digit_start):
 
             assert vm.memory[i:i+vm.digit_length] ==\
                 DEFAULT_DIGITS[digit_value]
-#test_fx29_load_digit_address_to_i()
+
+
+@pytest.mark.parametrize(
+    "x_reg, i_reg_value,value_to_bcd,digits",
+    (
+        (0, 2048, 0, (0, 0, 0)),
+        (8, 2049, 234, (2, 3, 4))
+    )
+)
+def test_fx33_bcd_of_vx_starting_at_i(
+        x_reg,
+        i_reg_value,
+        value_to_bcd,
+        digits
+):
+    """
+    BCD of digits to memory works properly.
+
+    :param x_reg: which x register to use
+    :param i_reg_value: where in memory to store the bcd
+    :param value_to_bcd: what will be converted
+    :param digits: the expected digit output
+    :return:
+    """
+    vm = Chip8VirtualMachine()
+
+    vm.i_register = i_reg_value
+    vm.v_registers[x_reg] = value_to_bcd
+
+    prep_and_execute_ixii_instruction(
+        vm,
+        x_reg, 0x33
+    )
+
+    for index, digit in enumerate(digits):
+        assert vm.memory[i_reg_value + index] == digit
+
+
