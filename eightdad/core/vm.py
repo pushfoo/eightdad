@@ -170,6 +170,11 @@ class Chip8VirtualMachine:
             self.i_register = nnn
             self.program_increment += 1
 
+        elif type_nibble == 0x2:  # call instruction
+            self.call_stack.append(self.program_counter)
+            self.program_counter = nnn
+
+
     def tick(self, dt: float) -> None:
         """
         Execute a single instruction at the allotted speed.
