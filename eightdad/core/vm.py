@@ -7,10 +7,12 @@ Timer and VM are implemented here.
 from typing import Tuple, List
 from eightdad.core.bytecode import (
     PATTERN_IXII,
+    PATTERN_INNN
 )
 from eightdad.core.bytecode import Chip8Instruction
 from eightdad.core.video import VideoRam, DEFAULT_DIGITS
 
+DEFAULT_EXECUTION_START = 0x200
 
 class Timer:
     """
@@ -70,7 +72,7 @@ class Chip8VirtualMachine:
             display_size: Tuple[int, int] = (64, 32),
             display_wrap: bool = False,
             memory_size: int = 4096,
-            execution_start: int = 0x200,
+            execution_start: int = DEFAULT_EXECUTION_START,
             digit_start: int = 0x0,
             ticks_per_second: int = 200
     ):
@@ -153,6 +155,21 @@ class Chip8VirtualMachine:
 
         self.program_increment += 1
 
+    def _handle_innn(self) -> None:
+        """
+        Execute address-related instructions
+
+        This includes such jumps, calls, and setting the I register.
+
+        :return: None
+        """
+        nnn = self.instruction_parser.nnn
+        type_nibble = self.instruction_parser.type_nibble
+
+        if type_nibble == 0xA:  # set I to nnn
+            self.i_register = nnn
+            self.program_increment += 1
+
     def tick(self, dt: float) -> None:
         """
         Execute a single instruction at the allotted speed.
@@ -175,11 +192,17 @@ class Chip8VirtualMachine:
         # start interpretation
         self.instruction_parser.decode(self.memory, self.program_counter)
 
-        if self.instruction_parser.pattern == PATTERN_IXII:
+        pattern = self.instruction_parser.pattern
+
+        if pattern == PATTERN_IXII:
             self.handle_ixii()
+
+        elif pattern == PATTERN_INNN:
+            self._handle_innn()
+
+
         else:
             raise NotImplementedError("Instruction not yet supported")
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
-
