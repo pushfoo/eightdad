@@ -174,9 +174,13 @@ class Chip8VirtualMachine:
             self.call_stack.append(self.program_counter)
             self.program_counter = nnn
 
-        elif type_nibble == 0x1:  # jump instruction
+        elif type_nibble == 0x1 or type_nibble == 0xB:  # jump instruction
             self.program_counter = nnn
+            if type_nibble == 0xB:  # includes a shift
+                self.program_counter += self.v_registers[0]
 
+        else:
+            raise NotImplementedError("Unsupported instruction")
 
     def tick(self, dt: float) -> None:
         """
