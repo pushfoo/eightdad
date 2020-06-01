@@ -38,11 +38,13 @@ def test_annn_sets_i_register(memory_location):
 def test_2nnn_sets_program_counter_and_pushes_stack(memory_location):
     """2nnn instruction jumps to location and increments stack"""
     vm = VM()
-
+    assert vm.stack_size == 0
     assert vm.program_counter == DEFAULT_EXECUTION_START
     load_and_execute_instruction(vm, 0x2000, nnn=memory_location)
+
     assert vm.program_counter == memory_location
-    assert vm.call_stack[-1] == DEFAULT_EXECUTION_START
+    assert vm.stack_top == DEFAULT_EXECUTION_START
+    assert vm.stack_size == 1
 
 
 @pytest.mark.parametrize("memory_location", VALID_MEMORY_LOCATIONS)
@@ -53,7 +55,7 @@ def test_1nnn_jumps_to_address(memory_location):
     assert vm.program_counter == DEFAULT_EXECUTION_START
     load_and_execute_instruction(vm, 0x1000, nnn=memory_location)
     assert vm.program_counter == memory_location
-    assert len(vm.call_stack) == 0
+    assert vm.stack_size == 0
 
 @pytest.mark.parametrize(
     "memory_location, v0",
@@ -67,7 +69,7 @@ def test_bnnn_jumps_to_address_plus_offset(memory_location, v0):
     vm = VM()
 
     assert vm.program_counter == DEFAULT_EXECUTION_START
-    assert vm.call_stack == []
+    assert vm.stack_size == 0
 
     vm.v_registers[0] = v0
     load_and_execute_instruction(
@@ -75,5 +77,5 @@ def test_bnnn_jumps_to_address_plus_offset(memory_location, v0):
         nnn=memory_location,
     )
     assert vm.program_counter == memory_location + v0
-    assert len(vm.call_stack) == 0
+    assert vm.stack_size == 0
 

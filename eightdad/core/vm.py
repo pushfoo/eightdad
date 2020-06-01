@@ -171,8 +171,7 @@ class Chip8VirtualMachine:
             self.program_increment += 1
 
         elif type_nibble == 0x2:  # call instruction
-            self.call_stack.append(self.program_counter)
-            self.program_counter = nnn
+            self.stack_call(nnn)
 
         elif type_nibble == 0x1 or type_nibble == 0xB:  # jump instruction
             self.program_counter = nnn
@@ -181,6 +180,35 @@ class Chip8VirtualMachine:
 
         else:
             raise NotImplementedError("Unsupported instruction")
+
+    def stack_call(self, location: int) -> None:
+        """
+        Jump to the passed location and put the current one onto the stack
+
+        :param location: where to jump to
+        :return:
+        """
+        self.call_stack.append(self.program_counter)
+        self.program_counter = location
+
+    @property
+    def stack_size(self) -> int:
+        """
+        Abstract the call stack size
+
+        :return: current size of the call stack
+        """
+        return len(self.call_stack)
+
+    @property
+    def stack_top(self) -> int:
+        """
+        Abstraction for the top of the stack
+
+        :return: what the top of the call stack is below
+        """
+        return self.call_stack[-1]
+
 
     def tick(self, dt: float) -> None:
         """
@@ -218,3 +246,4 @@ class Chip8VirtualMachine:
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
+    
