@@ -7,10 +7,12 @@ Timer and VM are implemented here.
 from typing import Tuple, List
 from eightdad.core.bytecode import (
     PATTERN_IXII,
-)
+    PATTERN_INNN,
+    PATTERN_IIII)
 from eightdad.core.bytecode import Chip8Instruction
 from eightdad.core.video import VideoRam, DEFAULT_DIGITS
 
+DEFAULT_EXECUTION_START = 0x200
 
 class Timer:
     """
@@ -70,7 +72,7 @@ class Chip8VirtualMachine:
             display_size: Tuple[int, int] = (64, 32),
             display_wrap: bool = False,
             memory_size: int = 4096,
-            execution_start: int = 0x200,
+            execution_start: int = DEFAULT_EXECUTION_START,
             digit_start: int = 0x0,
             ticks_per_second: int = 200
     ):
@@ -153,6 +155,69 @@ class Chip8VirtualMachine:
 
         self.program_increment += 1
 
+    def _handle_innn(self) -> None:
+        """
+        Execute address-related instructions
+
+        This includes such jumps, calls, and setting the I register.
+
+        :return: None
+        """
+        nnn = self.instruction_parser.nnn
+        type_nibble = self.instruction_parser.type_nibble
+
+        if type_nibble == 0xA:  # set I to nnn
+            self.i_register = nnn
+            self.program_increment += 1
+
+        elif type_nibble == 0x2:  # call instruction
+            self.stack_call(nnn)
+
+        elif type_nibble == 0x1 or type_nibble == 0xB:  # jump instruction
+            self.program_counter = nnn
+            if type_nibble == 0xB:  # includes a shift
+                self.program_counter += self.v_registers[0]
+
+        else:
+            raise NotImplementedError("Unsupported instruction")
+
+    def stack_return(self) -> None:
+        """
+        Return to the last location on the stack
+
+        :return:
+        """
+        self.program_counter = self.call_stack.pop()
+
+    def stack_call(self, location: int) -> None:
+        """
+        Jump to the passed location and put the current one onto the stack
+
+        :param location: where to jump to
+        :return:
+        """
+        self.call_stack.append(self.program_counter)
+        self.program_counter = location
+
+    @property
+    def stack_size(self) -> int:
+        """
+        Abstract the call stack size
+
+        :return: current size of the call stack
+        """
+        return len(self.call_stack)
+
+    @property
+    def stack_top(self) -> int:
+        """
+        Abstraction for the top of the stack
+
+        :return: what the top of the call stack is below
+        """
+        return self.call_stack[-1]
+
+
     def tick(self, dt: float) -> None:
         """
         Execute a single instruction at the allotted speed.
@@ -175,11 +240,22 @@ class Chip8VirtualMachine:
         # start interpretation
         self.instruction_parser.decode(self.memory, self.program_counter)
 
-        if self.instruction_parser.pattern == PATTERN_IXII:
+        pattern = self.instruction_parser.pattern
+
+        if pattern == PATTERN_IXII:
             self.handle_ixii()
+
+        elif pattern == PATTERN_INNN:
+            self._handle_innn()
+
+        elif pattern == PATTERN_IIII:
+            if self.instruction_parser.lo_byte == 0xEE:
+                self.stack_return()
+            else:
+                raise NotImplementedError("Instruction not supported")
+
         else:
             raise NotImplementedError("Instruction not yet supported")
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
-
