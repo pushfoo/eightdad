@@ -8,6 +8,8 @@ Tests for the innn instructions:
 * Bnnn, Jump to nnn + v0: set pc to nnn + v0
 
 """
+from itertools import product
+
 import pytest
 
 from eightdad.core import Chip8VirtualMachine as VM
@@ -53,4 +55,25 @@ def test_1nnn_jumps_to_address(memory_location):
     assert vm.program_counter == memory_location
     assert len(vm.call_stack) == 0
 
+@pytest.mark.parametrize(
+    "memory_location, v0",
+    product(
+        VALID_MEMORY_LOCATIONS[:-1], # remove #FFF as it's at the end
+        (0x00, 0x20, 0xFF)
+    )
+)
+def test_bnnn_jumps_to_address_plus_offset(memory_location, v0):
+    """Bnnn sets program counter to nnn + v0"""
+    vm = VM()
+
+    assert vm.program_counter == DEFAULT_EXECUTION_START
+    assert vm.call_stack == []
+
+    vm.v_registers[0] = v0
+    load_and_execute_instruction(
+        vm, 0xB000,
+        nnn=memory_location,
+    )
+    assert vm.program_counter == memory_location + v0
+    assert len(vm.call_stack) == 0
 
