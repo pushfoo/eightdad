@@ -43,3 +43,14 @@ def test_2nnn_sets_program_counter_and_pushes_stack(memory_location):
     assert vm.call_stack[-1] == DEFAULT_EXECUTION_START
 
 
+@pytest.mark.parametrize("memory_location", VALID_MEMORY_LOCATIONS)
+def test_1nnn_jumps_to_address(memory_location):
+    """1nnn sets program counter to nnn"""
+    vm = VM()
+
+    assert vm.program_counter == DEFAULT_EXECUTION_START
+    load_and_execute_instruction(vm, 0x1000, nnn=memory_location)
+    assert vm.program_counter == memory_location
+    assert len(vm.call_stack) == 0
+
+
