@@ -5,15 +5,16 @@ from itertools import product
 
 import pytest
 from eightdad.core.bytecode import Chip8Instruction as Instruction
-from tests.util import src_to_pairs, dict_to_argtuples
+from tests.util import dict_to_argtuples
 
 ATTR_NAMES = ("nnn", "x", "y", "kk", "n")
 
 
-@pytest.mark.parametrize( "attr_name",ATTR_NAMES)
+@pytest.mark.parametrize("attr_name", ATTR_NAMES)
 def test_setters_raise_typeerror_on_bad_type(
-        attr_name,
+    attr_name,
 ):
+    """Setting non-int types results in errors"""
     i = Instruction()
 
     with pytest.raises(TypeError):
@@ -21,25 +22,27 @@ def test_setters_raise_typeerror_on_bad_type(
 
 
 BIGGER_THAN_4_BIT = (0x10, 0xF0)
+
+
 @pytest.mark.parametrize(
-    "attr_name,too_big_values",
-    (
-        ("nnn", (0xFFFF, 0xFFFFFF)),
-        ("n", BIGGER_THAN_4_BIT),
-        ("x", BIGGER_THAN_4_BIT),
-        ("y", BIGGER_THAN_4_BIT),
-        ("kk", (0x100, 0xF00, 0xFFF))
-    )
+    "attr_name,too_big_value",
+    dict_to_argtuples({
+        ("nnn",): (0xFFFF, 0xFFFFFF),
+        ("n",):  BIGGER_THAN_4_BIT,
+        ("x",): BIGGER_THAN_4_BIT,
+        ("y",): BIGGER_THAN_4_BIT,
+        ("kk",): (0x100, 0xF00, 0xFFF)
+    })
 )
 def test_setters_raise_valueerror_on_too_big(
     attr_name,
-    too_big_values
+    too_big_value
 ):
+    """Raises ValueError on attempts to set values that are too high"""
     i = Instruction()
 
-    for value in too_big_values:
-        with pytest.raises(ValueError):
-            setattr(i, attr_name, value)
+    with pytest.raises(ValueError):
+        setattr(i, attr_name, too_big_value)
 
 
 LESS_THAN_ZERO = (-1, -5)
@@ -56,8 +59,8 @@ def test_setters_raise_valueerror_on_too_small(
     attr_name,
     too_small_value
 ):
+    """Raises ValueError on attempts to set values that are too low"""
     i = Instruction()
-
 
     with pytest.raises(ValueError):
         setattr(i, attr_name, too_small_value)
@@ -80,6 +83,7 @@ VALID_8BIT = VALID_4BIT + (0x10, 0xFF)
     )
 )
 def test_valid_values_set_ok(attr_name, template, valid_value):
+    """Sets values correctly"""
     i = Instruction(template)
 
     assert getattr(i, attr_name) == 0
