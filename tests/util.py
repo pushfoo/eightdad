@@ -1,35 +1,23 @@
-from typing import List, Tuple, Any, Mapping, Iterable, Hashable, Union
-
-ValidPairSource = Union[
-    Iterable[Tuple[Any, Any]],
-    Mapping[Hashable, Any]
-]
+from itertools import product
+from typing import Tuple, Any, Iterable, Dict, Generator
 
 
-def src_to_pairs(pairsrc: ValidPairSource) -> List[Tuple[Any, Any]]:
+def dict_to_argtuples(
+    src: Dict[Tuple,Iterable[Any]]
+) -> Generator[Tuple]:
     """
 
-    Turn sources into (k, v) pair legible arguments to parametrized tests
+    Turn structured parameter dicts into legible test case parameters.
 
-    If the argument is a mapping, then the key is combined with every
-    entry in the
+    The generator yields one set of testcase parameters per tuple. This
+    ensures the user can tell what specific data caused a test case to
+    fail while still allowing compact expression of test parameters.
 
-
-    :param pairsrc: what to take the pairs from
-    :return:
     """
+    out_raw = []
 
-    out = []
+    for prefix, suffixes in src.items():
+        out_raw.extend(product((prefix,), suffixes))
 
-    it_src = pairsrc
-    if isinstance(pairsrc, Mapping):
-        it_src = pairsrc.items()
+    return (prefix + (suffix, ) for prefix, suffix  in out_raw)
 
-    for key, value in it_src:
-        if isinstance(value, Iterable):
-            for item in value:
-                out.append((key, item))
-        else:
-            out.append((key, value))
-
-    return out

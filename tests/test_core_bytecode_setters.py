@@ -5,7 +5,7 @@ from itertools import product
 
 import pytest
 from eightdad.core.bytecode import Chip8Instruction as Instruction
-from tests.util import src_to_pairs
+from tests.util import src_to_pairs, dict_to_argtuples
 
 ATTR_NAMES = ("nnn", "x", "y", "kk", "n")
 
@@ -68,8 +68,8 @@ VALID_8BIT = VALID_4BIT + (0x10, 0xFF)
 
 
 @pytest.mark.parametrize(
-    "attr_params,valid_value",
-    src_to_pairs(
+    "attr_name,template,valid_value",
+    dict_to_argtuples(
         {
             ("x", 0xE09E): VALID_4BIT,
             ("y", 0x8006): VALID_4BIT,
@@ -79,8 +79,7 @@ VALID_8BIT = VALID_4BIT + (0x10, 0xFF)
         }
     )
 )
-def test_valid_values_set_ok(attr_params, valid_value):
-    attr_name, template = attr_params
+def test_valid_values_set_ok(attr_name, template, valid_value):
     i = Instruction(template)
 
     assert getattr(i, attr_name) == 0
