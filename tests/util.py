@@ -4,10 +4,13 @@ from typing import Tuple, Any, Iterable, Dict, Generator
 
 def dict_to_argtuples(
     src: Dict[Tuple,Iterable[Any]]
-) -> Generator[Tuple]:
+) -> Iterable[Tuple]:
     """
 
     Turn structured parameter dicts into legible test case parameters.
+
+    The odd return typing is so pycharm stops flagging the generator
+    expression return as a non-generator.
 
     The generator yields one set of testcase parameters per tuple. This
     ensures the user can tell what specific data caused a test case to
