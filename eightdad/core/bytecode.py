@@ -60,6 +60,8 @@ PATTERN_IXYN
 from typing import Iterable, Dict, ByteString, Any, Union
 
 #
+from eightdad.core.util import ValidateInt
+
 USES_NNN = 0x1
 USES_X = 0x2
 USES_Y = 0x4
@@ -139,10 +141,14 @@ class InvalidInstructionException(Exception):
 
 IntOrByteString = Union[int, ByteString]
 
+
 class Chip8Instruction:
     """
 
     Abstraction for reading & writing chip8 instructions
+
+    The setters aren't likely to be very fast, and exist to make writing
+    tests and the assembler cleaner.
 
     """
     PATTERN_MAP = FIRST_NIBBLE_TO_PATTERN
@@ -213,6 +219,19 @@ class Chip8Instruction:
                 f" {USE_TO_NAME[usage]} in {USE_TO_LOC[usage]}"
                 f" on instruction on {hex(self.raw)[2:].upper()}")
 
+    def pack_into(self, buffer: Any, offset: int = 0) -> None:
+        """
+        Packs the value into a buffer object.
+
+        Relies on setters below to alter the values of the object.
+
+        :param buffer: an object implementuing the buffer protocol
+        :param offset: how far into the object to write
+        :return:
+        """
+        buffer[offset] = self.hi_byte
+        buffer[offset + 1] = self.lo_byte
+
     @property
     def hi_byte(self) -> int:
         return self._hi_byte
@@ -226,22 +245,68 @@ class Chip8Instruction:
         self.access_check(USES_NNN)
         return self._nnn
 
+    @nnn.setter
+    @ValidateInt(0, 0xFFF)
+    def nnn(self, nnn) -> None:
+        self.access_check(USES_NNN)
+        self._lo_byte = nnn & 0xFF
+        self._hi_byte &= 0xF0
+        self._hi_byte |= (nnn >> 8)
+
+        self._nnn = nnn
+
     @property
     def x(self) -> int:
         self.access_check(USES_X)
         return self._x
 
+    @x.setter
+    @ValidateInt(0, 0xF)
+    def x(self, value: int) -> None:
+
+        self._hi_byte &= 0xF0
+        self._hi_byte |= value
+
+        self._x = value
+
     @property
     def y(self) -> int:
         self.access_check(USES_Y)
+
         return self._y
+
+    @y.setter
+    @ValidateInt(0, 0xF)
+    def y(self, value: int) -> None:
+        self.access_check(USES_Y)
+
+        self._lo_byte &= 0x0F
+        self._lo_byte |= value << 4
+
+        self._y = value
 
     @property
     def kk(self) -> int:
         self.access_check(USES_KK)
+
         return self._lo_byte
+
+    @kk.setter
+    @ValidateInt(0, 0xFF)
+    def kk(self, value) -> None:
+        self._lo_byte = value
 
     @property
     def n(self) -> int:
         self.access_check(USES_N)
         return self._n
+
+    @n.setter
+    @ValidateInt(0, 0xF)
+    def n(self, value: int) -> None:
+        self.access_check(USES_N)
+
+        self._lo_byte &= 0xF0
+        self._lo_byte |= value
+
+        self._n = value
