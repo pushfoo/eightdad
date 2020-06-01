@@ -1,15 +1,16 @@
 """
 Test setters on instruction class
 """
+from itertools import product
 
 import pytest
 from eightdad.core.bytecode import Chip8Instruction as Instruction
+from tests.util import src_to_pairs
+
+ATTR_NAMES = ("nnn", "x", "y", "kk", "n")
 
 
-@pytest.mark.parametrize(
-    "attr_name",
-    ("nnn", "x", "y", "kk", "n")
-)
+@pytest.mark.parametrize( "attr_name",ATTR_NAMES)
 def test_setters_raise_typeerror_on_bad_type(
         attr_name,
 ):
@@ -39,3 +40,50 @@ def test_setters_raise_valueerror_on_too_big(
     for value in too_big_values:
         with pytest.raises(ValueError):
             setattr(i, attr_name, value)
+
+
+LESS_THAN_ZERO = (-1, -5)
+
+
+@pytest.mark.parametrize(
+    "attr_name,too_small_value",
+    product(
+        ATTR_NAMES,
+        LESS_THAN_ZERO
+    )
+)
+def test_setters_raise_valueerror_on_too_small(
+    attr_name,
+    too_small_value
+):
+    i = Instruction()
+
+
+    with pytest.raises(ValueError):
+        setattr(i, attr_name, too_small_value)
+
+
+VALID_4BIT = (0x0, 0x1, 0xF)
+VALID_8BIT = VALID_4BIT + (0x10, 0xFF)
+
+
+@pytest.mark.parametrize(
+    "attr_params,valid_value",
+    src_to_pairs(
+        {
+            ("x", 0xE09E): VALID_4BIT,
+            ("y", 0x8006): VALID_4BIT,
+            ("n", 0xD000): VALID_4BIT,
+            ("kk", 0x3000): VALID_8BIT,
+            ("nnn", 0x1000): VALID_8BIT + (0xAAA, 0xFFF)
+        }
+    )
+)
+def test_valid_values_set_ok(attr_params, valid_value):
+    attr_name, template = attr_params
+    i = Instruction(template)
+
+    assert getattr(i, attr_name) == 0
+    setattr(i, attr_name, valid_value)
+    assert getattr(i, attr_name) == valid_value
+
