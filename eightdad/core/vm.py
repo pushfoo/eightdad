@@ -174,6 +174,9 @@ class Chip8VirtualMachine:
             self.call_stack.append(self.program_counter)
             self.program_counter = nnn
 
+        elif type_nibble == 0x1:  # jump instruction
+            self.program_counter = nnn
+
 
     def tick(self, dt: float) -> None:
         """
