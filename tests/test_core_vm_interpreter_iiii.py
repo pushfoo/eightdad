@@ -20,6 +20,8 @@ def test_00ee_returns_to_last_location(call_location):
     load_and_execute_instruction(
         vm,
         0x00EE, # return instruction
-        load_point=0xF00
+        load_point=call_location
     )
-    assert vm.stack_top == DEFAULT_EXECUTION_START
+    assert vm.program_counter == DEFAULT_EXECUTION_START
+    assert vm.stack_size == 0
+

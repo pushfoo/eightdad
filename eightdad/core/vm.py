@@ -7,8 +7,8 @@ Timer and VM are implemented here.
 from typing import Tuple, List
 from eightdad.core.bytecode import (
     PATTERN_IXII,
-    PATTERN_INNN
-)
+    PATTERN_INNN,
+    PATTERN_IIII)
 from eightdad.core.bytecode import Chip8Instruction
 from eightdad.core.video import VideoRam, DEFAULT_DIGITS
 
@@ -181,6 +181,14 @@ class Chip8VirtualMachine:
         else:
             raise NotImplementedError("Unsupported instruction")
 
+    def stack_return(self) -> None:
+        """
+        Return to the last location on the stack
+
+        :return:
+        """
+        self.program_counter = self.call_stack.pop()
+
     def stack_call(self, location: int) -> None:
         """
         Jump to the passed location and put the current one onto the stack
@@ -240,10 +248,14 @@ class Chip8VirtualMachine:
         elif pattern == PATTERN_INNN:
             self._handle_innn()
 
+        elif pattern == PATTERN_IIII:
+            if self.instruction_parser.lo_byte == 0xEE:
+                self.stack_return()
+            else:
+                raise NotImplementedError("Instruction not supported")
 
         else:
             raise NotImplementedError("Instruction not yet supported")
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
-    
