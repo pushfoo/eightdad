@@ -132,3 +132,29 @@ def test_6xkk_sets_vx_to_kk(vx, value_to_set):
         kk=value_to_set
     )
     assert vm.v_registers[vx] == value_to_set
+
+
+@pytest.mark.parametrize(
+    "vx, initial_value, value_to_add",
+    product(
+        range(0, 16),
+        (5, 0xFF),
+        (0x1, 0x2, 0x3)
+    )
+)
+def test_7xkk_adds_kk_to_vx(
+    self,
+    vx,
+    initial_value,
+    value_to_add
+):
+    vm = VM()
+    vm.v_registers[vx] = initial_value
+    load_and_execute_instruction(
+        vm,
+        0x7000,
+        x=vx,
+        kk=value_to_add
+    )
+    # yes, no VF flag is set according to multiple specs :(
+    assert vm.v_registers[vx] == (initial_value + value_to_add) % 256
