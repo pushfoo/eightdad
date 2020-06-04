@@ -199,6 +199,9 @@ class Chip8VirtualMachine:
         elif type_nibble == 0x6:
             self.v_registers[x] = kk
 
+        elif type_nibble == 0x7:
+            self.v_registers[x] = (self.v_registers[x] + kk) % 0x100
+
         else:
             raise NotImplementedError("Unsupported instruction")
 
