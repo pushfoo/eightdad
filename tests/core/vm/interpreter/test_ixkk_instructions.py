@@ -4,7 +4,7 @@ from eightdad.core import Chip8VirtualMachine as VM
 from tests.util import load_and_execute_instruction
 
 EXECUTION_STARTS = (0x200,0x500,0xF00)
-BYTE_VALUES = (0, 0x1, 0xAA, 0xFF)
+NIBBLE_VALUES = (0, 0xA, 0xD)
 
 class Test3XKKInstruction:
 
@@ -12,7 +12,7 @@ class Test3XKKInstruction:
         "vx,vx_and_kk_value,exec_start",
         product(
             range(0,16),
-            BYTE_VALUES,
+            NIBBLE_VALUES,
             EXECUTION_STARTS
         )
     )
@@ -25,8 +25,10 @@ class Test3XKKInstruction:
         vm = VM(execution_start=exec_start)
         vm.v_registers[vx] = vx_and_kk_value
         load_and_execute_instruction(
+            vm,
             0x3000,
-            x=vx_and_kk_value,
+            load_point=exec_start,
+            x=vx,
             kk=vx_and_kk_value
         )
         assert vm.program_counter == exec_start + 2
@@ -35,8 +37,8 @@ class Test3XKKInstruction:
         "vx,vx_value,kk_value,exec_start",
         product(
             range(0,16),
-            BYTE_VALUES,
-            BYTE_VALUES,
+            NIBBLE_VALUES,
+            map(lambda x: x + 1, NIBBLE_VALUES),
             EXECUTION_STARTS
         )
     )
@@ -50,7 +52,9 @@ class Test3XKKInstruction:
         vm = VM(execution_start=exec_start)
         vm.v_registers[vx] = vx_value
         load_and_execute_instruction(
+            vm,
             0x3000,
+            load_point=exec_start,
             x=vx_value,
             kk=kk_value,
         )
