@@ -13,36 +13,10 @@ import pytest
 from itertools import product
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.video import DEFAULT_DIGITS
+from tests.util import load_and_execute_instruction
 
 EXECUTION_START = 512
 TWO_HUNDREDTH = 1.0 / 200
-
-
-def prep_and_execute_ixii_instruction(
-        vm: Chip8VirtualMachine,
-        x_value: int,
-        lo_byte: int,
-        type_nibble: int = 0xF0,
-        load_point=EXECUTION_START
-):
-    """
-    Set a memory location to an ixii instruction & execute it
-
-    This helper is useful for testing.
-
-    :param vm: the vm to set memory on
-    :param x_value: the x value that will specify the v-register targeted
-    :param lo_byte: the last two hex digits of the instruction
-    :param type_nibble: sets the type for this var
-    :param load_point: where the instruction will be loaded into memory
-    :return:
-    """
-    if load_point != EXECUTION_START:
-        vm.program_counter = load_point
-
-    vm.memory[load_point + 1] = lo_byte
-    vm.memory[load_point] = type_nibble | x_value
-    vm.tick(TWO_HUNDREDTH)
 
 
 @pytest.mark.parametrize(
@@ -57,7 +31,7 @@ def test_fx07_set_vx_to_delay_timer_value(
     vm = Chip8VirtualMachine()
     vm.delay_timer = delay_timer_value
 
-    prep_and_execute_ixii_instruction(vm, v_register_index, 0x07)
+    load_and_execute_instruction(vm, 0xF007, x=v_register_index)
 
     assert vm.v_registers[v_register_index] == delay_timer_value
 
@@ -89,8 +63,7 @@ class TestSettingTimers:
 
         vm.delay_timer = initial_delay_value
         vm.v_registers[source_register] = set_value
-
-        prep_and_execute_ixii_instruction(vm, source_register, 0x15)
+        load_and_execute_instruction(vm, 0xF015, x=source_register)
 
         assert vm.delay_timer == set_value
 
@@ -121,7 +94,7 @@ class TestSettingTimers:
         vm.sound_timer = initial_sound_value
         vm.v_registers[source_register] = set_value
 
-        prep_and_execute_ixii_instruction(vm, source_register, 0x18)
+        load_and_execute_instruction(vm, 0xF018, x=source_register)
 
         assert vm.sound_timer == set_value
 
@@ -150,7 +123,7 @@ def test_fx1e_adds_vx_to_i_register(
     vm.i_register = initial_i
     vm.v_registers[source_register] = value_to_add
 
-    prep_and_execute_ixii_instruction(vm, source_register, 0x1E)
+    load_and_execute_instruction(vm, 0xF01E, x=source_register)
 
     assert vm.i_register == initial_i + value_to_add
 
@@ -179,7 +152,7 @@ def test_fx29_load_address_for_digit_sprite_to_i(
         vm.program_counter = EXECUTION_START
 
         vm.v_registers[source_register] = digit_to_sprite
-        prep_and_execute_ixii_instruction(vm, source_register, 0x29)
+        load_and_execute_instruction(vm, 0xF029, x=source_register)
         i = vm.i_register
 
         assert vm.memory[i:i+vm.digit_length] ==\
@@ -213,10 +186,7 @@ def test_fx33_store_bcd_of_vx_starting_at_i(
     vm.i_register = i_reg_value
     vm.v_registers[v_register_index] = value_to_bcd
 
-    prep_and_execute_ixii_instruction(
-        vm,
-        v_register_index, 0x33
-    )
+    load_and_execute_instruction(vm, 0xF033, x=v_register_index)
 
     for index, digit in enumerate(expected_result_digits):
         assert vm.memory[i_reg_value + index] == digit
