@@ -163,7 +163,8 @@ def test_7xkk_adds_kk_to_vx(
 @pytest.mark.parametrize(
     "vx,bit_mask",
     product(
-
+        range(0,16),
+        (0b10000001, 0x1, 0b1111)
     )
 )
 @patch(
@@ -176,10 +177,11 @@ def test_cxkk_sets_vx_to_masked_random(
 ):
     """CXKK sets vx to random byte masked  """
     vm = VM()
+    mock_randrange.return_value = 0xFF
     load_and_execute_instruction(
         vm,
         0xC000,
         x=vx,
         kk=bit_mask
     )
-    assert vm.v_registers[vx] == bit_mask
+    assert vm.v_registers[vx] == 0xFF & bit_mask
