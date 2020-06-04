@@ -143,7 +143,6 @@ def test_6xkk_sets_vx_to_kk(vx, value_to_set):
     )
 )
 def test_7xkk_adds_kk_to_vx(
-    self,
     vx,
     initial_value,
     value_to_add
