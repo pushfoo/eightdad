@@ -114,3 +114,21 @@ class Test4XKKInstruction:
             kk=kk_value,
         )
         assert vm.program_counter == exec_start + 2
+
+
+@pytest.mark.parametrize(
+    "vx, value_to_set",
+    product(
+        range(0, 16),
+        (5, 0xFF)
+    )
+)
+def test_6xkk_sets_vx_to_kk(vx, value_to_set):
+    vm = VM()
+    load_and_execute_instruction(
+        vm,
+        0x6000,
+        x=vx,
+        kk=value_to_set
+    )
+    assert vm.v_registers[vx] == value_to_set
