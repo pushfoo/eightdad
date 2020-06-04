@@ -5,6 +5,7 @@ Timer and VM are implemented here.
 
 """
 from typing import Tuple, List
+from random import randrange
 from eightdad.core.bytecode import (
     PATTERN_IXII,
     PATTERN_INNN,
@@ -201,6 +202,9 @@ class Chip8VirtualMachine:
 
         elif type_nibble == 0x7:
             self.v_registers[x] = (self.v_registers[x] + kk) % 0x100
+
+        elif type_nibble == 0xC:
+            self.v_registers[x] = randrange(0, 0xFF) & kk
 
         else:
             raise NotImplementedError("Unsupported instruction")

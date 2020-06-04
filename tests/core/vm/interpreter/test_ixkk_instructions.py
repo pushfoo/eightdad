@@ -2,8 +2,7 @@ import pytest
 from itertools import product
 from unittest.mock import patch
 from eightdad.core import Chip8VirtualMachine as VM
-from tests.util import load_and_execute_instruction
-
+from tests.util import load_and_execute_instruction, fullbits_generator
 
 EXECUTION_STARTS = (0x200,0x500,0xF00)
 NIBBLE_VALUES = (0, 0xA, 0xD)
@@ -160,16 +159,27 @@ def test_7xkk_adds_kk_to_vx(
     # yes, no VF flag is set according to multiple specs :(
     assert vm.v_registers[vx] == (initial_value + value_to_add) % 256
 
-@patch(
-    "eightdad.vm.randrange",
-    return_value=0xFF
+
+@pytest.mark.parametrize(
+    "vx,bit_mask",
+    product(
+
+    )
 )
-def test_cxkk_sets_vx_to_masked_random():
+@patch(
+    "eightdad.core.vm.randrange"
+)
+def test_cxkk_sets_vx_to_masked_random(
+        mock_randrange,
+        vx,
+        bit_mask
+):
+    """CXKK sets vx to random byte masked  """
     vm = VM()
     load_and_execute_instruction(
         vm,
         0xC000,
-        x=0,
-        kk=0xFF
+        x=vx,
+        kk=bit_mask
     )
-    assert vm.v_registers[0] == 0xFF
+    assert vm.v_registers[vx] == bit_mask
