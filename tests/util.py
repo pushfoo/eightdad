@@ -75,3 +75,23 @@ def load_and_execute_instruction(
     )
     vm.tick(1/200.0)
 
+
+def fullbits_generator(max_num_bits: int):
+    """
+    Generate a range of values from 0 to 2 ** max_num_bits
+
+    :param num_bits: the maximum number of bits to generate
+    :return:
+    """
+
+    yield 0
+
+    bits = 1
+    for i in range(0, max_num_bits):
+        yield bits
+        bits <<= 1
+        bits |= 1
+
+
+
+
