@@ -59,3 +59,58 @@ class Test3XKKInstruction:
             kk=kk_value,
         )
         assert vm.program_counter == exec_start + 1
+
+
+class Test4XKKInstruction:
+
+    @pytest.mark.parametrize(
+        "vx,vx_and_kk_value,exec_start",
+        product(
+            range(0,16),
+            NIBBLE_VALUES,
+            EXECUTION_STARTS
+        )
+    )
+    def test_4xkk_does_not_skip_next_instruction_if_vx_eq_kk(
+        self,
+        vx: int,
+        vx_and_kk_value: int,
+        exec_start: int
+    ):
+        vm = VM(execution_start=exec_start)
+        vm.v_registers[vx] = vx_and_kk_value
+        load_and_execute_instruction(
+            vm,
+            0x4000,
+            load_point=exec_start,
+            x=vx,
+            kk=vx_and_kk_value
+        )
+        assert vm.program_counter == exec_start + 1
+
+    @pytest.mark.parametrize(
+        "vx,vx_value,kk_value,exec_start",
+        product(
+            range(0,16),
+            NIBBLE_VALUES,
+            map(lambda x: x + 1, NIBBLE_VALUES),
+            EXECUTION_STARTS
+        )
+    )
+    def test_4xkk_skips_next_instruction_if_vx_neq_kk(
+        self,
+        vx: int,
+        vx_value,
+        kk_value,
+        exec_start
+    ):
+        vm = VM(execution_start=exec_start)
+        vm.v_registers[vx] = vx_value
+        load_and_execute_instruction(
+            vm,
+            0x4000,
+            load_point=exec_start,
+            x=vx_value,
+            kk=kk_value,
+        )
+        assert vm.program_counter == exec_start + 2
