@@ -196,6 +196,9 @@ class Chip8VirtualMachine:
             if self.v_registers[x] != kk:
                 self.program_increment += 1
 
+        elif type_nibble == 0x6:
+            self.v_registers[x] = kk
+
         else:
             raise NotImplementedError("Unsupported instruction")
 
