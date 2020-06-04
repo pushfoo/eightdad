@@ -8,7 +8,9 @@ from typing import Tuple, List
 from eightdad.core.bytecode import (
     PATTERN_IXII,
     PATTERN_INNN,
-    PATTERN_IIII)
+    PATTERN_IIII,
+    PATTERN_IXKK
+)
 from eightdad.core.bytecode import Chip8Instruction
 from eightdad.core.video import VideoRam, DEFAULT_DIGITS
 
@@ -181,6 +183,19 @@ class Chip8VirtualMachine:
         else:
             raise NotImplementedError("Unsupported instruction")
 
+    def handle_ixkk(self) -> None:
+        x = self.instruction_parser.x
+        kk = self.instruction_parser.kk
+        type_nibble = self.instruction_parser.type_nibble
+
+        if type_nibble == 0x3:
+            if self.v_registers[x] == kk:
+                self.program_increment += 1
+        else:
+            raise NotImplementedError("Unsupported instruction")
+
+        self.program_increment += 1
+
     def stack_return(self) -> None:
         """
         Return to the last location on the stack
@@ -247,6 +262,9 @@ class Chip8VirtualMachine:
 
         elif pattern == PATTERN_INNN:
             self._handle_innn()
+
+        elif pattern == PATTERN_IXKK:
+            self.handle_ixkk()
 
         elif pattern == PATTERN_IIII:
             if self.instruction_parser.lo_byte == 0xEE:
