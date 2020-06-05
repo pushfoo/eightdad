@@ -9,20 +9,21 @@ from tests.util import load_and_execute_instruction
 class Test5XY0SkipsIfVxEqVy:
 
     @pytest.mark.parametrize(
-        "x,x_val,y,y_val",
+        "x,y",
         (
-            product(
-                range(0, 16),
-                (0, 1),
-                range(9, 16),
-                (2, 3)
+            filter(
+                lambda x: x[0] != x[1],
+                product(
+                    range(0, 16),
+                    range(0, 16),
+                )
             )
         )
     )
-    def test_5xy0_doesnt_skip_next_if_vx_ne_vy(self, x, x_val, y, y_val):
+    def test_5xy0_doesnt_skip_next_if_vx_ne_vy(self, x, y):
         vm = VM()
-        vm.v_registers[x] = x_val
-        vm.v_registers[y] = y_val
+        vm.v_registers[x] = 0
+        vm.v_registers[y] = 1
 
         load_and_execute_instruction(
             vm,
@@ -43,7 +44,7 @@ class Test5XY0SkipsIfVxEqVy:
             )
         )
     )
-    def test_5xy0_skips_next_if_vx_ne_vy(self, x, y, equal_val):
+    def test_5xy0_skips_next_if_vx_eq_vy(self, x, y, equal_val):
 
         vm = VM()
         vm.v_registers[x] = equal_val
