@@ -10,12 +10,15 @@ from eightdad.core.bytecode import (
     PATTERN_IXII,
     PATTERN_INNN,
     PATTERN_IIII,
-    PATTERN_IXKK
-)
+    PATTERN_IXKK,
+    PATTERN_IXYI)
 from eightdad.core.bytecode import Chip8Instruction
 from eightdad.core.video import VideoRam, DEFAULT_DIGITS
 
 DEFAULT_EXECUTION_START = 0x200
+
+INSTRUCTION_LENGTH = 2 # 2 bytes, 16 bits
+
 
 class Timer:
     """
@@ -157,8 +160,6 @@ class Chip8VirtualMachine:
         else:
             self.instruction_unhandled = True
 
-        self.program_increment += 1
-
     def _handle_innn(self) -> None:
         """
         Execute address-related instructions
@@ -172,12 +173,15 @@ class Chip8VirtualMachine:
 
         if type_nibble == 0xA:  # set I to nnn
             self.i_register = nnn
-            self.program_increment += 1
+            self.program_increment += INSTRUCTION_LENGTH
 
         elif type_nibble == 0x2:  # call instruction
+            self.program_increment = 0
             self.stack_call(nnn)
 
+
         elif type_nibble == 0x1 or type_nibble == 0xB:  # jump instruction
+            self.program_increment = 0
             self.program_counter = nnn
             if type_nibble == 0xB:  # includes a shift
                 self.program_counter += self.v_registers[0]
@@ -192,11 +196,11 @@ class Chip8VirtualMachine:
 
         if type_nibble == 0x3:
             if self.v_registers[x] == kk:
-                self.program_increment += 1
+                self.program_increment += INSTRUCTION_LENGTH
 
         elif type_nibble == 0x4:
             if self.v_registers[x] != kk:
-                self.program_increment += 1
+                self.program_increment += INSTRUCTION_LENGTH
 
         elif type_nibble == 0x6:
             self.v_registers[x] = kk
@@ -210,7 +214,6 @@ class Chip8VirtualMachine:
         else:
             self.instruction_unhandled = True
 
-        self.program_increment += 1
 
     def stack_return(self) -> None:
         """
@@ -258,8 +261,9 @@ class Chip8VirtualMachine:
         :param dt: float, how long the instruction will take to execute.
         :return:
         """
-        # clear temp vars keeping
-        self.program_increment = 0
+
+        # reset bookeeping to defaults
+        self.program_increment = INSTRUCTION_LENGTH
 
         # move timing forward
         if not dt:
@@ -285,6 +289,24 @@ class Chip8VirtualMachine:
         elif pattern == PATTERN_IIII:
             if self.instruction_parser.lo_byte == 0xEE:
                 self.stack_return()
+                self.program_increment = 0
+
+            else:
+                self.instruction_unhandled = True
+
+        elif pattern == PATTERN_IXYI:
+
+            x = self.instruction_parser.x
+            y = self.instruction_parser.y
+
+            type_nibble = self.instruction_parser.type_nibble
+            end_nibble = self.instruction_parser.lo_byte & 0xF
+
+            if type_nibble == 0x5 and end_nibble == 0:
+
+                if self.v_registers[x] == self.v_registers[y]:
+                    self.program_increment += INSTRUCTION_LENGTH
+
             else:
                 self.instruction_unhandled = True
 
