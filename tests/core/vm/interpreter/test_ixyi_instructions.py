@@ -81,7 +81,7 @@ class Test9XY0SkipsIfVxNotEqualsVy:
 
         load_and_execute_instruction(
             vm,
-            0x5000,
+            0x9000,
             x=x, y=y
         )
 
