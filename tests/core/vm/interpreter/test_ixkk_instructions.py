@@ -2,6 +2,7 @@ import pytest
 from itertools import product
 from unittest.mock import patch
 from eightdad.core import Chip8VirtualMachine as VM
+from eightdad.core.vm import INSTRUCTION_LENGTH
 from tests.util import load_and_execute_instruction, fullbits_generator
 
 EXECUTION_STARTS = (0x200,0x500,0xF00)
@@ -32,7 +33,7 @@ class Test3XKKInstruction:
             x=vx,
             kk=vx_and_kk_value
         )
-        assert vm.program_counter == exec_start + 2
+        assert vm.program_counter == exec_start + (2 * INSTRUCTION_LENGTH)
 
     @pytest.mark.parametrize(
         "vx,vx_value,kk_value,exec_start",
@@ -59,7 +60,7 @@ class Test3XKKInstruction:
             x=vx_value,
             kk=kk_value,
         )
-        assert vm.program_counter == exec_start + 1
+        assert vm.program_counter == exec_start + INSTRUCTION_LENGTH
 
 
 class Test4XKKInstruction:
@@ -87,7 +88,7 @@ class Test4XKKInstruction:
             x=vx,
             kk=vx_and_kk_value
         )
-        assert vm.program_counter == exec_start + 1
+        assert vm.program_counter == exec_start + INSTRUCTION_LENGTH
 
     @pytest.mark.parametrize(
         "vx,vx_value,kk_value,exec_start",
@@ -114,7 +115,7 @@ class Test4XKKInstruction:
             x=vx_value,
             kk=kk_value,
         )
-        assert vm.program_counter == exec_start + 2
+        assert vm.program_counter == exec_start + (2 * INSTRUCTION_LENGTH)
 
 
 @pytest.mark.parametrize(
