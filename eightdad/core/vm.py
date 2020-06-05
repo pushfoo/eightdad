@@ -307,6 +307,10 @@ class Chip8VirtualMachine:
                 if self.v_registers[x] == self.v_registers[y]:
                     self.program_increment += INSTRUCTION_LENGTH
 
+            elif type_nibble == 0x9 and end_nibble == 0:
+                if self.v_registers[x] != self.v_registers[y]:
+                    self.program_increment += INSTRUCTION_LENGTH
+
             else:
                 self.instruction_unhandled = True
 
