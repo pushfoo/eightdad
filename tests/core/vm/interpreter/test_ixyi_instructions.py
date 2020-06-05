@@ -2,7 +2,7 @@ from itertools import product
 
 import pytest
 from eightdad.core import Chip8VirtualMachine as VM
-from eightdad.core.vm import DEFAULT_EXECUTION_START
+from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
 from tests.util import load_and_execute_instruction
 
 
@@ -30,7 +30,8 @@ class Test5XY0SkipsIfVxEqVy:
             x=x, y=y
         )
 
-        assert vm.program_counter == DEFAULT_EXECUTION_START + 1
+        assert vm.program_counter ==\
+               DEFAULT_EXECUTION_START + INSTRUCTION_LENGTH
 
     @pytest.mark.parametrize(
         "x,y,equal_val",
@@ -54,5 +55,6 @@ class Test5XY0SkipsIfVxEqVy:
             x=x, y=y
         )
 
-        assert vm.program_counter == DEFAULT_EXECUTION_START + 2
+        assert vm.program_counter ==\
+               DEFAULT_EXECUTION_START + (2 * INSTRUCTION_LENGTH)
 
