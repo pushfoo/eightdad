@@ -104,6 +104,7 @@ class Chip8VirtualMachine:
         self.tick_length = 1.0 / ticks_per_second
 
         self.instruction_parser = Chip8Instruction()
+        self.instruction_unhandled = False
 
     @property
     def delay_timer(self):
@@ -154,7 +155,7 @@ class Chip8VirtualMachine:
             self.memory[self.i_register + 2] = ones
 
         else:
-            raise NotImplementedError("Instruction not yet supported")
+            self.instruction_unhandled = True
 
         self.program_increment += 1
 
@@ -182,7 +183,7 @@ class Chip8VirtualMachine:
                 self.program_counter += self.v_registers[0]
 
         else:
-            raise NotImplementedError("Unsupported instruction")
+            self.instruction_unhandled = True
 
     def handle_ixkk(self) -> None:
         x = self.instruction_parser.x
@@ -207,7 +208,7 @@ class Chip8VirtualMachine:
             self.v_registers[x] = randrange(0, 0xFF) & kk
 
         else:
-            raise NotImplementedError("Unsupported instruction")
+            self.instruction_unhandled = True
 
         self.program_increment += 1
 
@@ -285,10 +286,18 @@ class Chip8VirtualMachine:
             if self.instruction_parser.lo_byte == 0xEE:
                 self.stack_return()
             else:
-                raise NotImplementedError("Instruction not supported")
+                self.instruction_unhandled = True
 
         else:
-            raise NotImplementedError("Instruction not yet supported")
+            self.instruction_unhandled = True
+
+        if self.instruction_unhandled:
+            raise ValueError(
+                f"Unrecognized instruction 0x"
+                f"{hex(self.memory[self.program_counter])}"
+                f"{hex(self.memory[self.program_counter+1])}"
+                f"at address 0x{hex(self.program_counter)}"
+            )
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
