@@ -192,3 +192,10 @@ def test_fx33_store_bcd_of_vx_starting_at_i(
         assert vm.memory[i_reg_value + index] == digit
 
 
+class TestFx55StoresRegistersToRam:
+
+    def test_writes_registers_to_ram(self):
+        raise NotImplementedError()
+
+    def test_does_not_exceed_vx_specified(self):
+        raise NotImplementedError()
