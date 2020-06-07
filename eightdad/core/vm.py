@@ -157,6 +157,12 @@ class Chip8VirtualMachine:
             self.memory[self.i_register + 1] = tens
             self.memory[self.i_register + 2] = ones
 
+        elif lo_byte == 0x55:  # save registers to memory starting at I
+            i = self.i_register
+
+            for register in range(0, x + 1):
+                self.memory[i + register] = self.v_registers[register]
+
         else:
             self.instruction_unhandled = True
 
