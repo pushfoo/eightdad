@@ -10,7 +10,7 @@ Tests for the following ixii instructions:
 
 """
 import pytest
-from itertools import product
+from itertools import product, chain
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.video import DEFAULT_DIGITS
 from tests.util import load_and_execute_instruction
@@ -194,8 +194,65 @@ def test_fx33_store_bcd_of_vx_starting_at_i(
 
 class TestFx55StoresRegistersToRam:
 
-    def test_writes_registers_to_ram(self):
-        raise NotImplementedError()
+    def _write_values_to_memory(
+            self,
+            vm: Chip8VirtualMachine,
+            max_register: int,
+            write_dest: int = 0xA00,
+            value_start: int = 128
+    ) -> None:
+        """
 
-    def test_does_not_exceed_vx_specified(self):
-        raise NotImplementedError()
+        Helper function that executes a bulk register save operation.
+
+        Will write value_start +0, ... value_start + max_register to
+        the first max_register registers.
+
+        Then runs FX55, with max_register as X.
+
+        :param vm: vm object to write to
+        :param max_register: the highest register that will be saved
+        :param value_start: what the start of the written values will be
+        :return:
+        """
+
+        # set up the registers with unique values that can be checked
+        # for correct write order in memory.
+        for index in range(0, max_register + 1):
+            vm.v_registers[index] = value_start + index
+
+        # set up where the registers will be stored to
+        vm.i_register = write_dest
+
+        load_and_execute_instruction(
+            vm, 0xF055, x=max_register
+        )
+
+    @pytest.mark.parametrize("max_register", 0xF)
+    def test_fx55_writes_registers_to_ram(self, max_register):
+        vm = Chip8VirtualMachine()
+
+        self._write_values_to_memory(
+            vm, max_register, 0xA000, 128
+        )
+
+        for index in range(0, max_register+1):
+            assert vm.memory[0xA00 + index] == 128 + index
+
+    @pytest.mark.parametrize("write_location", (0xA00, ))
+    def test_fx55_does_not_touch_other_memory(self, write_location):
+        vm = Chip8VirtualMachine()
+
+        self._write_values_to_memory(
+            vm, 0xF, write_location, 128
+        )
+
+        # memory outside of the write area isn't touched
+        for memory_index in chain(
+                range(0x200, write_location),
+                range(write_location + 0x10, len(vm.memory))
+        ):
+            assert vm.memory[memory_index] == 0
+
+
+
