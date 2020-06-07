@@ -228,31 +228,31 @@ class TestFx55StoresRegistersToRam:
             vm, 0xF055, x=max_register
         )
 
-    @pytest.mark.parametrize("max_register", 0xF)
+    @pytest.mark.parametrize("max_register", tuple(range(0, 16)))
     def test_fx55_writes_registers_to_ram(self, max_register):
+        """Fx55 writes register contents to RAM correctly"""
         vm = Chip8VirtualMachine()
 
         self._write_values_to_memory(
-            vm, max_register, 0xA000, 128
+            vm, max_register, 0xA00, 128
         )
 
         for index in range(0, max_register+1):
             assert vm.memory[0xA00 + index] == 128 + index
 
-    @pytest.mark.parametrize("write_location", (0xA00, ))
+    @pytest.mark.parametrize("write_location", (0xA00, 0x400))
     def test_fx55_does_not_touch_other_memory(self, write_location):
+        """Fx55 doesn't touch RAM outside the range it's supposed to"""
         vm = Chip8VirtualMachine()
 
         self._write_values_to_memory(
             vm, 0xF, write_location, 128
         )
 
-        # memory outside of the write area isn't touched
+        # memory outside of the write area isn't touched, excludes
+        # the load point of the fx55 instruction
         for memory_index in chain(
-                range(0x200, write_location),
-                range(write_location + 0x10, len(vm.memory))
+                range(0x202, write_location),
+                range(write_location + 18, len(vm.memory))
         ):
             assert vm.memory[memory_index] == 0
-
-
-
