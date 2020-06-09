@@ -248,6 +248,15 @@ class Chip8VirtualMachine:
             # set vf to 1 if the operation overflowed
             self.v_registers[0xF] = int(unclamped_sum > 255)
 
+        elif lo_nibble == 0x5:
+            unclamped_diff = self.v_registers[x] - self.v_registers[y]
+
+            # store the difference clamped to 0 as the minimum
+            self.v_registers[x] = max(unclamped_diff, 0)
+
+            # set VF to 1 if a borrow didn't occur, otherwise 0
+            self.v_registers[0xF] = int(unclamped_diff >= 0)
+
         else:
             self.instruction_unhandled = True
 
