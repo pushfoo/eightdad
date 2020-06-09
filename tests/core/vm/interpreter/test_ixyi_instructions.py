@@ -119,8 +119,8 @@ class Test9XY0SkipsIfVxNotEqualsVy:
 @pytest.mark.parametrize("y", range(0, 16))
 class Test8XY1OrsRegisters:
 
-    def test_8xy1_sets_target_to_or_of_vx_and_vy(self, x, y):
-        """8xy1 sets VX = VX | VY"""
+    def test_8xy1_sets_vx_to_logical_or_of_vx_and_vy(self, x, y):
+        """8xy1 sets VX = VX OR VY"""
 
         vm = VM()
         original_x_value = 0b10101010
@@ -153,7 +153,7 @@ class Test8XY1OrsRegisters:
 @pytest.mark.parametrize("y", range(0, 16))
 class Test8XY2AndsRegisters:
 
-    def test_8xy2_sets_target_to_and_of_vx_and_vy(self, x, y):
+    def test_8xy2_sets_vx_to_and_of_vx_and_vy(self, x, y):
         """8xy2 sets VX to VX AND VY"""
 
         vm = VM()
@@ -185,7 +185,7 @@ class Test8XY2AndsRegisters:
 @pytest.mark.parametrize("y", range(0, 16))
 class Test8XY3XorsRegisters:
 
-    def test_8xy3_sets_target_to_xor_of_vx_and_vy(self, x, y):
+    def test_8xy3_sets_vx_to_xor_of_vx_and_vy(self, x, y):
         """8xy3 sets VX to VX XOR VY"""
 
         vm = VM()
@@ -217,13 +217,13 @@ class Test8XY3XorsRegisters:
 class Test8XY4AddsRegisters:
 
     # Avoiding setting VF as the destination is intentional here. It
-    # always stores 0 or 1 to indicate if an overflow occured. The next
+    # always stores 0 or 1 to indicate if an overflow occurred. The next
     # test method verifies that behavior.
     @pytest.mark.parametrize("x", range(0, 0xF))
     @pytest.mark.parametrize("y", range(0, 16))
     @pytest.mark.parametrize("a", (1, 255))
     @pytest.mark.parametrize("b", (1,))
-    def test_8xy4_sets_target_to_sum_of_vx_and_vy(self, x, y, a, b):
+    def test_8xy4_sets_vx_to_sum_of_vx_and_vy(self, x, y, a, b):
         """8xy4 sets VX to VX + VY, clamped to 255 max"""
 
         vm = VM()
