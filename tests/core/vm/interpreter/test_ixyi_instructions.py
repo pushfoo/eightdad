@@ -148,3 +148,34 @@ class Test8XY1OrsRegisters:
 
         assert other_registers_untouched(vm, (x, y))
 
+
+@pytest.mark.parametrize("x", range(0, 16))
+@pytest.mark.parametrize("y", range(0, 16))
+class Test8XY1OrsRegisters:
+
+    def test_8xy2_sets_target_to_and_of_vx_and_vy(self, x, y):
+        """8xy2 sets VX to VX AND VY"""
+
+        vm = VM()
+
+        left_half_filled = 0b11110000
+
+        vm.v_registers[x] = 0xFF
+        vm.v_registers[y] = left_half_filled
+
+        # set vx = vx AND 0x11110000. If vx is already set to 0x11110000,
+        # the value will still be 0x11110000 after the instruction runs.
+        load_and_execute_instruction(vm, 0x8002, x=x, y=y)
+
+        assert vm.v_registers[x] == left_half_filled
+
+    def test_8xy2_leaves_other_registers_alone(self, x, y):
+        """8xy2 leaves registers other than VX and VY alone"""
+
+        vm = VM()
+        vm.v_registers[x] = 0b10101010
+        vm.v_registers[y] = 0b01010101
+
+        load_and_execute_instruction(vm, 0x8002, x=x, y=y)
+
+        assert other_registers_untouched(vm, (x, y))
