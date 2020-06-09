@@ -3,7 +3,7 @@ from itertools import product
 import pytest
 from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
-from tests.util import load_and_execute_instruction
+from tests.util import load_and_execute_instruction, other_registers_untouched
 
 
 class Test5XY0SkipsIfVxEqualsVy:
@@ -114,3 +114,33 @@ class Test9XY0SkipsIfVxNotEqualsVy:
         assert vm.program_counter ==\
                DEFAULT_EXECUTION_START + INSTRUCTION_LENGTH
 
+
+@pytest.mark.parametrize("x", range(0, 16))
+@pytest.mark.parametrize("y", range(0, 16))
+class Test8XY1OrsRegisters:
+
+    def test_8xy1_sets_target_to_or(self, x, y):
+        vm = VM()
+        original_x_value = 0b10101010
+        default_y_value = 0b01010101
+
+        vm.v_registers[x] = original_x_value
+        if y != x:
+            vm.v_registers[y] = default_y_value
+
+        load_and_execute_instruction(vm, 0x8001, x=x, y=y)
+
+        if y != x:
+            assert vm.v_registers[x] == original_x_value | default_y_value
+        else:
+            assert vm.v_registers[x] == original_x_value
+
+    def test_8xy1_leaves_other_registers_alone(self, x, y):
+
+        vm = VM()
+        vm.v_registers[x] = 0b10101010
+        vm.v_registers[y] = 0b01010101
+
+        load_and_execute_instruction(vm, 0x8001, x=x, y=y)
+
+        assert other_registers_untouched(vm, (x, y))

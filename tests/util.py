@@ -76,6 +76,42 @@ def load_and_execute_instruction(
     vm.tick(1/200.0)
 
 
+def registers_untouched(
+        vm: Chip8VirtualMachine,
+        registers: Iterable[int]
+) -> bool:
+    """
+    Return true if the specified registers are equal to zero
+
+    :param vm:
+    :param registers:
+    :return:
+    """
+    return all(map(lambda x: vm.v_registers[x] == 0, registers))
+
+
+def other_registers_untouched(
+        vm: Chip8VirtualMachine,
+        touched_registers: Iterable[int],
+        num_registers: int = 0xF
+) -> bool:
+    """
+    Return true if all registers other than the passed one are zero.
+
+    Converts the source iterable to a set, so repetition of register
+    args is ok.
+
+    :param vm: the VM to check
+    :param touched_registers: registers not expected to be untouched
+    :param num_registers: how many registers the machine has
+    :return:
+    """
+    return registers_untouched(
+        vm,
+        set(touched_registers).difference(range(0, num_registers))
+    )
+
+
 def fullbits_generator(max_num_bits: int):
     """
     Generate a range of values from 0 to 2 ** max_num_bits
