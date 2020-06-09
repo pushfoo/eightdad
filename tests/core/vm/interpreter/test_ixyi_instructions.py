@@ -186,7 +186,7 @@ class Test8XY2AndsRegisters:
 class Test8XY3XorsRegisters:
 
     def test_8xy3_sets_target_to_xor_of_vx_and_vy(self, x, y):
-        """8xy2 sets VX to VX XOR VY"""
+        """8xy3 sets VX to VX XOR VY"""
 
         vm = VM()
 
@@ -202,7 +202,7 @@ class Test8XY3XorsRegisters:
             assert vm.v_registers[x] == 0
 
     def test_8xy3_leaves_other_registers_alone(self, x, y):
-        """8xy2 leaves registers other than VX and VY alone"""
+        """8xy3 leaves registers other than VX and VY alone"""
 
         vm = VM()
 
