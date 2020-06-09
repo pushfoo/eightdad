@@ -311,10 +311,10 @@ class TestFx65LoadsRamToRegisters:
         vm = Chip8VirtualMachine()
 
         self._load_from_memory(
-            vm, 0xF, 0xA00, 128
+            vm, max_register, 0xA00, 128
         )
 
         # memory outside of the write area isn't touched, excludes
         # the load point of the fx55 instruction
-        for register_index in range(max_register, 16):
+        for register_index in range(max_register + 1, 16):
             assert vm.v_registers[register_index] == 0
