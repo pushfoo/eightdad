@@ -226,6 +226,17 @@ class Chip8VirtualMachine:
         else:
             self.instruction_unhandled = True
 
+    def _handle_math(self):
+        x = self.instruction_parser.x
+        y = self.instruction_parser.y
+        lo_nibble = self.instruction_parser.lo_byte & 0xF
+
+        if lo_nibble == 0x1:
+            self.v_registers[x] = self.v_registers[x] | self.v_registers[y]
+
+        else:
+            self.instruction_unhandled = True
+
 
     def stack_return(self) -> None:
         """
@@ -276,6 +287,7 @@ class Chip8VirtualMachine:
 
         # reset bookeeping to defaults
         self.program_increment = INSTRUCTION_LENGTH
+        self.instruction_unhandled = False
 
         # move timing forward
         if not dt:
@@ -308,23 +320,26 @@ class Chip8VirtualMachine:
 
         elif pattern == PATTERN_IXYI:
 
-            x = self.instruction_parser.x
-            y = self.instruction_parser.y
-
             type_nibble = self.instruction_parser.type_nibble
-            end_nibble = self.instruction_parser.lo_byte & 0xF
 
-            if type_nibble == 0x5 and end_nibble == 0:
-
-                if self.v_registers[x] == self.v_registers[y]:
-                    self.program_increment += INSTRUCTION_LENGTH
-
-            elif type_nibble == 0x9 and end_nibble == 0:
-                if self.v_registers[x] != self.v_registers[y]:
-                    self.program_increment += INSTRUCTION_LENGTH
+            if type_nibble == 0x8:
+                self._handle_math()
 
             else:
-                self.instruction_unhandled = True
+                x = self.instruction_parser.x
+                y = self.instruction_parser.y
+                end_nibble = self.instruction_parser.lo_byte & 0xF
+
+                if type_nibble == 0x5 and end_nibble == 0:
+                    if self.v_registers[x] == self.v_registers[y]:
+                        self.program_increment += INSTRUCTION_LENGTH
+
+                elif type_nibble == 0x9 and end_nibble == 0:
+                    if self.v_registers[x] != self.v_registers[y]:
+                        self.program_increment += INSTRUCTION_LENGTH
+
+                else:
+                    self.instruction_unhandled = True
 
         else:
             self.instruction_unhandled = True
@@ -339,3 +354,13 @@ class Chip8VirtualMachine:
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
+
+
+vm = Chip8VirtualMachine()
+
+vm.v_registers[0xF] = 0b10101010
+vm.v_registers[1] = 0b01010101
+
+vm.memory[0x200] = 0x8F
+vm.memory[0x201] = 0x11
+vm.tick(1 / 200.0)
