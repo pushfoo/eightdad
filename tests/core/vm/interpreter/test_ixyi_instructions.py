@@ -190,8 +190,8 @@ class Test8XY3XorsRegisters:
 
         vm = VM()
 
-        vm.v_registers[x] = 0xb10101111
-        vm.v_registers[y] = 0xb01011111
+        vm.v_registers[x] = 0b10101111
+        vm.v_registers[y] = 0b01011111
 
         load_and_execute_instruction(vm, 0x8003, x=x, y=y)
 
@@ -206,8 +206,8 @@ class Test8XY3XorsRegisters:
 
         vm = VM()
 
-        vm.v_registers[x] = 0xb10101111
-        vm.v_registers[y] = 0xb01011111
+        vm.v_registers[x] = 0b10101111
+        vm.v_registers[y] = 0b01011111
 
         load_and_execute_instruction(vm, 0x8003, x=x, y=y)
 
