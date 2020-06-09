@@ -163,6 +163,12 @@ class Chip8VirtualMachine:
             for register in range(0, x + 1):
                 self.memory[i + register] = self.v_registers[register]
 
+        elif lo_byte == 0x65:
+            i = self.i_register
+
+            for register in range(0, x + 1):
+                self.v_registers[register] = self.memory[i + register]
+
         else:
             self.instruction_unhandled = True
 
