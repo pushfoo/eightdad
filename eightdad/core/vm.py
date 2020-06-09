@@ -240,6 +240,14 @@ class Chip8VirtualMachine:
         elif lo_nibble == 0x3:
             self.v_registers[x] = self.v_registers[x] ^ self.v_registers[y]
 
+        elif lo_nibble == 0x4:
+            unclamped_sum = self.v_registers[x] + self.v_registers[y]
+
+            # store the result clamped to 0-255
+            self.v_registers[x] = min(unclamped_sum, 255)
+            # set vf to 1 if the operation overflowed
+            self.v_registers[0xF] = int(unclamped_sum > 255)
+
         else:
             self.instruction_unhandled = True
 
@@ -360,13 +368,3 @@ class Chip8VirtualMachine:
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
-
-
-vm = Chip8VirtualMachine()
-
-vm.v_registers[0xF] = 0b10101010
-vm.v_registers[1] = 0b01010101
-
-vm.memory[0x200] = 0x8F
-vm.memory[0x201] = 0x11
-vm.tick(1 / 200.0)
