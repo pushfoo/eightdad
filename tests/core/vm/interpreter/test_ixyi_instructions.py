@@ -280,3 +280,68 @@ class Test8XY4AddsRegisters:
         touched = {x, y, 0xF}
 
         assert other_registers_untouched(vm, touched)
+
+
+class Test8XY5SetsVxToVxMinusVy:
+
+    # Avoiding setting VF as the destination is intentional. Any
+    # difference written to VF will be overridden with a bit flag, as
+    # with the addition operator.
+    @pytest.mark.parametrize("x", range(0, 0xF))
+    @pytest.mark.parametrize("y", range(0, 16))
+    @pytest.mark.parametrize("a", (1, 2))
+    @pytest.mark.parametrize("b", (1, 0))
+    def test_8xy5_sets_vx_to_vx_minus_vy(self, x, y, a, b):
+        """8xy5 sets VX = VX - VY, clamped to 0 minimum"""
+
+        vm = VM()
+
+        vm.v_registers[x] = a
+
+        if x != y:
+            vm.v_registers[y] = b
+
+        load_and_execute_instruction(vm, 0x8005, x=x, y=y)
+
+        if x != y:
+            assert vm.v_registers[x] == max(a - b, 0)
+
+        else:  # any value minus itself yields zero
+            assert vm.v_registers[x] == 0
+
+    @pytest.mark.parametrize("x", range(0, 16))
+    @pytest.mark.parametrize("y", range(0, 16))
+    @pytest.mark.parametrize("a", (1, 255))
+    @pytest.mark.parametrize("b", (1,))
+    def test_8xy5_sets_vf_to_not_borrow(self, x, y, a, b):
+        """8xy5 sets VF to 1 if VX > VY, otherwise 0"""
+        vm = VM()
+
+        vm.v_registers[x] = a
+        if x != y:
+            vm.v_registers[y] = b
+
+        load_and_execute_instruction(vm, 0x8005, x=x, y=y)
+
+        assert vm.v_registers[0xF] == int(a > b)
+
+    @pytest.mark.parametrize("x", range(0, 16))
+    @pytest.mark.parametrize("y", range(0, 16))
+    def test_8xy5_leaves_other_registers_alone_unless_theyre_vf(
+        self,
+        x,
+        y
+    ):
+        """8xy5 leaves registers other than VX and VY alone except for VF"""
+
+        vm = VM()
+
+        vm.v_registers[x] = 2
+        vm.v_registers[y] = 1
+
+        load_and_execute_instruction(vm, 0x8005, x=x, y=y)
+
+        # make sure we don't check VF since it should always be set
+        touched = {x, y, 0xF}
+
+        assert other_registers_untouched(vm, touched)
