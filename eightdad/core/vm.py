@@ -237,6 +237,9 @@ class Chip8VirtualMachine:
         elif lo_nibble == 0x2:
             self.v_registers[x] = self.v_registers[x] & self.v_registers[y]
 
+        elif lo_nibble == 0x3:
+            self.v_registers[x] = self.v_registers[x] ^ self.v_registers[y]
+
         else:
             self.instruction_unhandled = True
 
