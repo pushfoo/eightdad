@@ -151,7 +151,7 @@ class Test8XY1OrsRegisters:
 
 @pytest.mark.parametrize("x", range(0, 16))
 @pytest.mark.parametrize("y", range(0, 16))
-class Test8XY1OrsRegisters:
+class Test8XY2AndsRegisters:
 
     def test_8xy2_sets_target_to_and_of_vx_and_vy(self, x, y):
         """8xy2 sets VX to VX AND VY"""
