@@ -212,3 +212,70 @@ class Test8XY3XorsRegisters:
         load_and_execute_instruction(vm, 0x8003, x=x, y=y)
 
         assert other_registers_untouched(vm, (x, y))
+
+
+class Test8XY4AddsRegisters:
+
+    # Avoiding setting VF as the destination is intentional here. It
+    # always stores 0 or 1 to indicate if an overflow occured. The next
+    # test method verifies that behavior.
+    @pytest.mark.parametrize("x", range(0, 0xF))
+    @pytest.mark.parametrize("y", range(0, 16))
+    @pytest.mark.parametrize("a", (1, 255))
+    @pytest.mark.parametrize("b", (1,))
+    def test_8xy4_sets_target_to_sum_of_vx_and_vy(self, x, y, a, b):
+        """8xy4 sets VX to VX + VY, clamped to 255 max"""
+
+        vm = VM()
+
+        vm.v_registers[x] = a
+        vm.v_registers[y] = b
+
+        load_and_execute_instruction(vm, 0x8004, x=x, y=y)
+
+        if x != y:
+            assert vm.v_registers[x] == min(a + b, 255)
+
+        else:  # any value xor itself yields zero
+            assert vm.v_registers[x] == min(2 * a, 255)
+
+    # According to the spec, VF should override itself if it is set as the
+    # destination of the sum. This behavior could be useful for checking
+    # whether something overflows without overriding crucial values.
+    @pytest.mark.parametrize("x", range(0, 16))
+    @pytest.mark.parametrize("y", range(0, 16))
+    @pytest.mark.parametrize("a", (1, 255))
+    @pytest.mark.parametrize("b", (1,))
+    def test_8xy4_sets_vf_to_carry_bit(self, x, y, a, b):
+        """8xy4 sets VF to 1 if VX + VY > 255, otherwise 0"""
+        vm = VM()
+
+        vm.v_registers[x] = a
+        vm.v_registers[y] = b
+
+        load_and_execute_instruction(vm, 0x8004, x=x, y=y)
+
+        assert vm.v_registers[0xF] == int(a + b > 255)
+
+    @pytest.mark.parametrize("x", range(0, 16))
+    @pytest.mark.parametrize("y", range(0, 16))
+    def test_8xy4_leaves_other_registers_alone_unless_theyre_vf(
+        self,
+        x,
+        y
+    ):
+        """8xy4 leaves registers other than VX and VY alone except for VF"""
+
+        vm = VM()
+
+        vm.v_registers[x] = 255
+        vm.v_registers[y] = 1
+
+        load_and_execute_instruction(vm, 0x8004, x=x, y=y)
+
+        # make sure we don't check VF since it should always be set
+        touched = {x, y}
+        if 0xF not in touched:
+            touched.add(0xF)
+
+        assert other_registers_untouched(vm, touched)
