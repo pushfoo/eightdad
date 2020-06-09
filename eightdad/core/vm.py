@@ -325,10 +325,10 @@ class Chip8VirtualMachine:
 
         if self.instruction_unhandled:
             raise ValueError(
-                f"Unrecognized instruction 0x"
+                f"Unrecognized instruction "
                 f"{hex(self.memory[self.program_counter])}"
-                f"{hex(self.memory[self.program_counter+1])}"
-                f"at address 0x{hex(self.program_counter)}"
+                f"{hex(self.memory[self.program_counter+1])[2:]} "
+                f"at address {hex(self.program_counter)}"
             )
 
         # advance by any amount we need to
