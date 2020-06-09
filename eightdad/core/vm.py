@@ -157,6 +157,18 @@ class Chip8VirtualMachine:
             self.memory[self.i_register + 1] = tens
             self.memory[self.i_register + 2] = ones
 
+        elif lo_byte == 0x55:  # save registers to memory starting at I
+            i = self.i_register
+
+            for register in range(0, x + 1):
+                self.memory[i + register] = self.v_registers[register]
+
+        elif lo_byte == 0x65:
+            i = self.i_register
+
+            for register in range(0, x + 1):
+                self.v_registers[register] = self.memory[i + register]
+
         else:
             self.instruction_unhandled = True
 
@@ -319,10 +331,10 @@ class Chip8VirtualMachine:
 
         if self.instruction_unhandled:
             raise ValueError(
-                f"Unrecognized instruction 0x"
+                f"Unrecognized instruction "
                 f"{hex(self.memory[self.program_counter])}"
-                f"{hex(self.memory[self.program_counter+1])}"
-                f"at address 0x{hex(self.program_counter)}"
+                f"{hex(self.memory[self.program_counter+1])[2:]} "
+                f"at address {hex(self.program_counter)}"
             )
 
         # advance by any amount we need to
