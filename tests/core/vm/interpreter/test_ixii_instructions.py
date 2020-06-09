@@ -256,3 +256,65 @@ class TestFx55StoresRegistersToRam:
                 range(write_location + 18, len(vm.memory))
         ):
             assert vm.memory[memory_index] == 0
+
+
+class TestFx65LoadsRamToRegisters:
+
+    def _load_from_memory(
+            self,
+            vm: Chip8VirtualMachine,
+            max_register: int,
+            read_src: int = 0xA00,
+            value_start: int = 128
+    ) -> None:
+        """
+
+        Helper function that executes a bulk register save operation.
+
+        Will write value_start +0, ... value_start + max_register to
+        the first max_register registers.
+
+        Then runs FX55, with max_register as X.
+
+        :param vm: vm object to write to
+        :param max_register: the highest register that will be saved
+        :param value_start: what the start of the written values will be
+        :return:
+        """
+
+        # set up the memory with values to read into registers
+        for register_index in range(0, max_register + 1):
+            vm.memory[read_src + register_index] = 128 + register_index
+
+        # set up where the registers will be stored to
+        vm.i_register = read_src
+
+        load_and_execute_instruction(
+            vm, 0xF065, x=max_register
+        )
+
+    @pytest.mark.parametrize("max_register", range(0, 16))
+    def test_fx65_loads_ram_to_registers(self, max_register):
+        """Fx65 reads ram contents to registers correctly"""
+        vm = Chip8VirtualMachine()
+
+        self._load_from_memory(
+            vm, max_register, 0xA00, 128
+        )
+
+        for register_index in range(0, max_register+1):
+            assert vm.v_registers[register_index] == 128 + register_index
+
+    @pytest.mark.parametrize("max_register", range(0,0xF))
+    def test_fx65_does_not_touch_other_registers(self, max_register):
+        """Fx65 doesn't touch registers past x"""
+        vm = Chip8VirtualMachine()
+
+        self._load_from_memory(
+            vm, 0xF, 0xA00, 128
+        )
+
+        # memory outside of the write area isn't touched, excludes
+        # the load point of the fx55 instruction
+        for register_index in range(max_register, 16):
+            assert vm.v_registers[register_index] == 0
