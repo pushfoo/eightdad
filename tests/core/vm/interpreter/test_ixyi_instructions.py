@@ -277,8 +277,6 @@ class Test8XY4AddsRegisters:
         load_and_execute_instruction(vm, 0x8004, x=x, y=y)
 
         # make sure we don't check VF since it should always be set
-        touched = {x, y}
-        if 0xF not in touched:
-            touched.add(0xF)
+        touched = {x, y, 0xF}
 
         assert other_registers_untouched(vm, touched)
