@@ -314,7 +314,7 @@ class Test8XY5SetsVxToVxMinusVy:
     @pytest.mark.parametrize("a", (1, 255))
     @pytest.mark.parametrize("b", (1,))
     def test_8xy5_sets_vf_to_not_borrow(self, x, y, a, b):
-        """8xy5 sets VF to 1 if VX > VY, otherwise 0"""
+        """8xy5 sets VF to 1 if VX >= VY, otherwise 0"""
         vm = VM()
 
         vm.v_registers[x] = a
@@ -323,7 +323,7 @@ class Test8XY5SetsVxToVxMinusVy:
 
         load_and_execute_instruction(vm, 0x8005, x=x, y=y)
 
-        assert vm.v_registers[0xF] == int(a > b)
+        assert vm.v_registers[0xF] == int(a >= b)
 
     @pytest.mark.parametrize("x", range(0, 16))
     @pytest.mark.parametrize("y", range(0, 16))
