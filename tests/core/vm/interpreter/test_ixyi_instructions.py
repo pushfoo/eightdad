@@ -179,3 +179,36 @@ class Test8XY2AndsRegisters:
         load_and_execute_instruction(vm, 0x8002, x=x, y=y)
 
         assert other_registers_untouched(vm, (x, y))
+
+
+@pytest.mark.parametrize("x", range(0, 16))
+@pytest.mark.parametrize("y", range(0, 16))
+class Test8XY3XorsRegisters:
+
+    def test_8xy3_sets_target_to_xor_of_vx_and_vy(self, x, y):
+        """8xy2 sets VX to VX XOR VY"""
+
+        vm = VM()
+
+        vm.v_registers[x] = 0xb10101111
+        vm.v_registers[y] = 0xb01011111
+
+        load_and_execute_instruction(vm, 0x8003, x=x, y=y)
+
+        if x != y:
+            assert vm.v_registers[x] == 0b11110000
+
+        else:  # any value xor itself yields zero
+            assert vm.v_registers[x] == 0
+
+    def test_8xy3_leaves_other_registers_alone(self, x, y):
+        """8xy2 leaves registers other than VX and VY alone"""
+
+        vm = VM()
+
+        vm.v_registers[x] = 0xb10101111
+        vm.v_registers[y] = 0xb01011111
+
+        load_and_execute_instruction(vm, 0x8003, x=x, y=y)
+
+        assert other_registers_untouched(vm, (x, y))
