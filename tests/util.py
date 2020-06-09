@@ -93,7 +93,7 @@ def registers_untouched(
 def other_registers_untouched(
         vm: Chip8VirtualMachine,
         touched_registers: Iterable[int],
-        num_registers: int = 0xF
+        num_registers: int = 16
 ) -> bool:
     """
     Return true if all registers other than the passed one are zero.
