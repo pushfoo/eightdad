@@ -229,7 +229,9 @@ class Test8XY4AddsRegisters:
         vm = VM()
 
         vm.v_registers[x] = a
-        vm.v_registers[y] = b
+
+        if x != y:
+            vm.v_registers[y] = b
 
         load_and_execute_instruction(vm, 0x8004, x=x, y=y)
 
@@ -251,7 +253,8 @@ class Test8XY4AddsRegisters:
         vm = VM()
 
         vm.v_registers[x] = a
-        vm.v_registers[y] = b
+        if x != y:
+            vm.v_registers[y] = b
 
         load_and_execute_instruction(vm, 0x8004, x=x, y=y)
 
