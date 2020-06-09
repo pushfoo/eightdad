@@ -119,7 +119,9 @@ class Test9XY0SkipsIfVxNotEqualsVy:
 @pytest.mark.parametrize("y", range(0, 16))
 class Test8XY1OrsRegisters:
 
-    def test_8xy1_sets_target_to_or(self, x, y):
+    def test_8xy1_sets_target_to_or_of_vx_and_vy(self, x, y):
+        """8xy1 sets VX = VX | VY"""
+
         vm = VM()
         original_x_value = 0b10101010
         default_y_value = 0b01010101
@@ -136,6 +138,7 @@ class Test8XY1OrsRegisters:
             assert vm.v_registers[x] == original_x_value
 
     def test_8xy1_leaves_other_registers_alone(self, x, y):
+        """8xy1 leaves other registers alone"""
 
         vm = VM()
         vm.v_registers[x] = 0b10101010
@@ -144,3 +147,4 @@ class Test8XY1OrsRegisters:
         load_and_execute_instruction(vm, 0x8001, x=x, y=y)
 
         assert other_registers_untouched(vm, (x, y))
+
