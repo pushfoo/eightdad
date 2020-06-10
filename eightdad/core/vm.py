@@ -275,6 +275,15 @@ class Chip8VirtualMachine:
             # set VF to 1 if a borrow didn't occur, otherwise 0
             self.v_registers[0xF] = int(unclamped_diff >= 0)
 
+        elif lo_nibble == 0xE:  # vx = vy << 1, vf = greatest bit of vy
+
+            # we need to store the least bit ahead of time because
+            # x could == y and both could be 0xF.
+            y_val = self.v_registers[y]
+
+            self.v_registers[x] = min(y_val << 1, 255)
+            self.v_registers[0xF] = y_val & 0x80
+
         else:
             self.instruction_unhandled = True
 
