@@ -226,6 +226,67 @@ class Chip8VirtualMachine:
         else:
             self.instruction_unhandled = True
 
+    def _handle_math(self):
+        x = self.instruction_parser.x
+        y = self.instruction_parser.y
+        lo_nibble = self.instruction_parser.lo_byte & 0xF
+
+        if lo_nibble == 0x1:
+            self.v_registers[x] = self.v_registers[x] | self.v_registers[y]
+
+        elif lo_nibble == 0x2:
+            self.v_registers[x] = self.v_registers[x] & self.v_registers[y]
+
+        elif lo_nibble == 0x3:
+            self.v_registers[x] = self.v_registers[x] ^ self.v_registers[y]
+
+        elif lo_nibble == 0x4:
+            unclamped_sum = self.v_registers[x] + self.v_registers[y]
+
+            # store the result clamped to 0-255
+            self.v_registers[x] = min(unclamped_sum, 255)
+            # set vf to 1 if the operation overflowed
+            self.v_registers[0xF] = int(unclamped_sum > 255)
+
+        elif lo_nibble == 0x5:
+            unclamped_diff = self.v_registers[x] - self.v_registers[y]
+
+            # store the difference clamped to 0 as the minimum
+            self.v_registers[x] = max(unclamped_diff, 0)
+
+            # set VF to 1 if a borrow didn't occur, otherwise 0
+            self.v_registers[0xF] = int(unclamped_diff >= 0)
+
+        elif lo_nibble == 0x6:  # vx = vy >> 1, vf = least bit of vy
+
+            # we need to store the least bit ahead of time because
+            # x could == y and both could be 0xF.
+            y_val = self.v_registers[y]
+
+            self.v_registers[x] = y_val >> 1
+            self.v_registers[0xF] = y_val & 1
+
+        elif lo_nibble == 0x7:
+            unclamped_diff = self.v_registers[y] - self.v_registers[x]
+
+            # store the difference clamped to 0 as the minimum
+            self.v_registers[x] = max(unclamped_diff, 0)
+
+            # set VF to 1 if a borrow didn't occur, otherwise 0
+            self.v_registers[0xF] = int(unclamped_diff >= 0)
+
+        elif lo_nibble == 0xE:  # vx = vy << 1, vf = greatest bit of vy
+
+            # we need to store the least bit ahead of time because
+            # x could == y and both could be 0xF.
+            y_val = self.v_registers[y]
+
+            self.v_registers[x] = min(y_val << 1, 255)
+            self.v_registers[0xF] = y_val & 0x80
+
+        else:
+            self.instruction_unhandled = True
+
 
     def stack_return(self) -> None:
         """
@@ -276,6 +337,7 @@ class Chip8VirtualMachine:
 
         # reset bookeeping to defaults
         self.program_increment = INSTRUCTION_LENGTH
+        self.instruction_unhandled = False
 
         # move timing forward
         if not dt:
@@ -308,23 +370,26 @@ class Chip8VirtualMachine:
 
         elif pattern == PATTERN_IXYI:
 
-            x = self.instruction_parser.x
-            y = self.instruction_parser.y
-
             type_nibble = self.instruction_parser.type_nibble
-            end_nibble = self.instruction_parser.lo_byte & 0xF
 
-            if type_nibble == 0x5 and end_nibble == 0:
-
-                if self.v_registers[x] == self.v_registers[y]:
-                    self.program_increment += INSTRUCTION_LENGTH
-
-            elif type_nibble == 0x9 and end_nibble == 0:
-                if self.v_registers[x] != self.v_registers[y]:
-                    self.program_increment += INSTRUCTION_LENGTH
+            if type_nibble == 0x8:
+                self._handle_math()
 
             else:
-                self.instruction_unhandled = True
+                x = self.instruction_parser.x
+                y = self.instruction_parser.y
+                end_nibble = self.instruction_parser.lo_byte & 0xF
+
+                if type_nibble == 0x5 and end_nibble == 0:
+                    if self.v_registers[x] == self.v_registers[y]:
+                        self.program_increment += INSTRUCTION_LENGTH
+
+                elif type_nibble == 0x9 and end_nibble == 0:
+                    if self.v_registers[x] != self.v_registers[y]:
+                        self.program_increment += INSTRUCTION_LENGTH
+
+                else:
+                    self.instruction_unhandled = True
 
         else:
             self.instruction_unhandled = True
