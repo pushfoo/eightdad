@@ -266,6 +266,15 @@ class Chip8VirtualMachine:
             self.v_registers[x] = y_val >> 1
             self.v_registers[0xF] = y_val & 1
 
+        elif lo_nibble == 0x7:
+            unclamped_diff = self.v_registers[y] - self.v_registers[x]
+
+            # store the difference clamped to 0 as the minimum
+            self.v_registers[x] = max(unclamped_diff, 0)
+
+            # set VF to 1 if a borrow didn't occur, otherwise 0
+            self.v_registers[0xF] = int(unclamped_diff >= 0)
+
         else:
             self.instruction_unhandled = True
 
