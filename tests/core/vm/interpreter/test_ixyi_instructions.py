@@ -3,7 +3,7 @@ from itertools import product
 import pytest
 from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
-from tests.util import load_and_execute_instruction, other_registers_untouched
+from tests.util import load_and_execute_instruction, other_registers_untouched, fullbits_generator
 
 
 class Test5XY0SkipsIfVxEqualsVy:
@@ -343,5 +343,62 @@ class Test8XY5SetsVxToVxMinusVy:
 
         # make sure we don't check VF since it should always be set
         touched = {x, y, 0xF}
+
+        assert other_registers_untouched(vm, touched)
+
+
+class Test8XY6SetsVxToVyShiftedRight1:
+
+    # Avoiding setting VF as the destination is intentional. Any
+    # value written to VF will be overridden with a bit flag.
+    @pytest.mark.parametrize("x", range(0, 0xF))
+    @pytest.mark.parametrize("y", range(0, 16))
+    @pytest.mark.parametrize("a", (1, 2))
+    @pytest.mark.parametrize("b", fullbits_generator(8))
+    def test_8xy6_sets_vx_to_vy_shifted_right_one(self, x, y, a, b):
+        """8xy6 sets VX = VY >> 1"""
+
+        vm = VM()
+
+        vm.v_registers[x] = a
+        vm.v_registers[y] = b
+
+        load_and_execute_instruction(vm, 0x8006, x=x, y=y)
+
+        assert vm.v_registers[x] == b >> 1
+
+    @pytest.mark.parametrize("x", range(0, 16))
+    @pytest.mark.parametrize("y", range(0, 16))
+    @pytest.mark.parametrize("a", (1, 255))
+    @pytest.mark.parametrize("b", (1, 255, 0, 2))
+    def test_8xy6_sets_vf_to_least_significant_digit_of_vy(self, x, y, a, b):
+        """8xy6 sets VF to least significant"""
+        vm = VM()
+
+        vm.v_registers[x] = a
+        vm.v_registers[y] = b
+
+        load_and_execute_instruction(vm, 0x8006, x=x, y=y)
+
+        assert vm.v_registers[0xF] == b & 1
+
+    @pytest.mark.parametrize("x", range(0, 16))
+    @pytest.mark.parametrize("y", range(0, 16))
+    def test_8xy6_leaves_other_registers_alone_unless_theyre_vf(
+        self,
+        x,
+        y
+    ):
+        """8xy6 leaves registers other than VX alone except for VF"""
+
+        vm = VM()
+
+        vm.v_registers[x] = 2
+        vm.v_registers[y] = 1
+
+        load_and_execute_instruction(vm, 0x8006, x=x, y=y)
+
+        # make sure we don't check VF since it should always be set
+        touched = {x, 0xF}
 
         assert other_registers_untouched(vm, touched)
