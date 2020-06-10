@@ -444,7 +444,10 @@ class Test8XY7SetsVxToVyMinusVx:
 
         load_and_execute_instruction(vm, 0x8007, x=x, y=y)
 
-        assert vm.v_registers[0xF] == int(b >= a)
+        if x != y:
+            assert vm.v_registers[0xF] == int(b >= a)
+        else:
+            assert vm.v_registers[0xF] == 1
 
     @pytest.mark.parametrize("x", range(0, 16))
     @pytest.mark.parametrize("y", range(0, 16))
@@ -453,7 +456,7 @@ class Test8XY7SetsVxToVyMinusVx:
         x,
         y
     ):
-        """8xy5 leaves registers other than VX and VY alone except for VF"""
+        """8xy7 leaves registers other than VX and VY alone except for VF"""
 
         vm = VM()
 
