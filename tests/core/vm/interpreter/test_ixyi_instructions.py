@@ -470,3 +470,59 @@ class Test8XY7SetsVxToVyMinusVx:
 
         assert other_registers_untouched(vm, touched)
 
+
+class Test8XYESetsVxToVyShiftedLeft1:
+
+    # Avoiding setting VF as the destination is intentional. Any
+    # value written to VF will be overridden with a bit flag.
+    @pytest.mark.parametrize("x", range(0, 0xF))
+    @pytest.mark.parametrize("y", range(0, 16))
+    @pytest.mark.parametrize("a", (1, 2))
+    @pytest.mark.parametrize("b", fullbits_generator(8))
+    def test_8xye_sets_vx_to_vy_shifted_left_one(self, x, y, a, b):
+        """8xyE sets VX = VY >> 1"""
+
+        vm = VM()
+
+        vm.v_registers[x] = a
+        vm.v_registers[y] = b
+
+        load_and_execute_instruction(vm, 0x800E, x=x, y=y)
+
+        assert vm.v_registers[x] == b << 1
+
+    @pytest.mark.parametrize("x", range(0, 16))
+    @pytest.mark.parametrize("y", range(0, 16))
+    @pytest.mark.parametrize("a", (1, 255))
+    @pytest.mark.parametrize("b", (1, 255, 0, 2))
+    def test_8xye_sets_vf_to_most_significant_digit_of_vy(self, x, y, a, b):
+        """8xyE sets VF to most significant digit of VY"""
+        vm = VM()
+
+        vm.v_registers[x] = a
+        vm.v_registers[y] = b
+
+        load_and_execute_instruction(vm, 0x800E, x=x, y=y)
+
+        assert vm.v_registers[0xF] == b & 0b10000000
+
+    @pytest.mark.parametrize("x", range(0, 16))
+    @pytest.mark.parametrize("y", range(0, 16))
+    def test_8xye_leaves_other_registers_alone_unless_theyre_vf(
+        self,
+        x,
+        y
+    ):
+        """8xy6 leaves registers other than VX alone except for VF"""
+
+        vm = VM()
+
+        vm.v_registers[x] = 2
+        vm.v_registers[y] = 1
+
+        load_and_execute_instruction(vm, 0x800E, x=x, y=y)
+
+        # make sure we don't check VF since it should always be set
+        touched = {x, 0xF}
+
+        assert other_registers_untouched(vm, touched)
