@@ -231,7 +231,10 @@ class Chip8VirtualMachine:
         y = self.instruction_parser.y
         lo_nibble = self.instruction_parser.lo_byte & 0xF
 
-        if lo_nibble == 0x1:
+        if lo_nibble == 0:  # register assignment
+            self.v_registers[x] = self.v_registers[y]
+
+        elif lo_nibble == 0x1:
             self.v_registers[x] = self.v_registers[x] | self.v_registers[y]
 
         elif lo_nibble == 0x2:
