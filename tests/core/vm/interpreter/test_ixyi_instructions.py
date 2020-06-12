@@ -115,6 +115,63 @@ class Test9XY0SkipsIfVxNotEqualsVy:
                DEFAULT_EXECUTION_START + INSTRUCTION_LENGTH
 
 
+
+class Test8XY0SetsVxToVy:
+
+    @pytest.mark.parametrize(
+        "x,y",
+        filter(
+            lambda t: t[0] != t[1],
+            product(range(0, 16), range(0, 16))
+        )
+    )
+    def test_8xy0_sets_vx_to_vy(self, x, y):
+        """8xy0 sets VX = VX OR VY"""
+
+        vm = VM()
+        original_x_value = 2
+        default_y_value = 3
+
+        vm.v_registers[x] = original_x_value
+        vm.v_registers[y] = default_y_value
+
+        load_and_execute_instruction(vm, 0x8000, x=x, y=y)
+
+        assert vm.v_registers[x] == default_y_value
+
+    @pytest.mark.parametrize("reg_index", range(0, 16))
+    def test_8xy0_same_value_for_x_and_y_leaves_reg_unchanged(
+            self,
+            reg_index
+    ):
+        """8xy0 does not alter the value when x & y are the same"""
+        vm = VM()
+
+        vm.v_registers[reg_index] = 5
+        load_and_execute_instruction(vm, 0x8000, x=reg_index, y=reg_index)
+
+        assert vm.v_registers[reg_index] == 5
+
+
+    @pytest.mark.parametrize(
+        "x,y",
+        filter(
+            lambda t: t[0] != t[1],
+            product(range(0, 16), range(0, 16))
+        )
+    )
+    def test_8xy0_leaves_original_alone(self, x, y):
+        """8xy0 leaves VY alone"""
+
+        vm = VM()
+        vm.v_registers[x] = 2
+        vm.v_registers[y] = 3
+
+        load_and_execute_instruction(vm, 0x8000, x=x, y=y)
+
+        assert other_registers_untouched(vm, {x, y})
+
+
 @pytest.mark.parametrize("x", range(0, 16))
 @pytest.mark.parametrize("y", range(0, 16))
 class Test8XY1OrsRegisters:
