@@ -5,6 +5,7 @@ from eightdad.core import VideoRam
 from eightdad.core.vm import Chip8VirtualMachine as VM
 from tests.util import load_and_execute_instruction
 
+
 @pytest.mark.parametrize(
     "x,y,n,i",
     (
@@ -29,7 +30,7 @@ def test_dxyn_calls_videoram_draw_correctly(x,y,n,i):
     load_and_execute_instruction(
         vm, 0xD000, x=x, y=y, n=n
     )
-    assert vm.video_ram.draw_sprite.called_with(
+    assert vm.video_ram.draw_sprite.called_once_with(
         x, y, vm.memory, num_bytes=n, offset=i
     )
 
