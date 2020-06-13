@@ -10,7 +10,6 @@ from eightdad.core.vm import Chip8VirtualMachine as VM, INSTRUCTION_LENGTH
 from tests.util import load_and_execute_instruction, other_registers_untouched, fullbits_generator
 
 
-
 @pytest.fixture
 def vm_will_draw_1_px() -> VM:
     """Set up a VM ready to draw a single pixel"""
@@ -20,7 +19,7 @@ def vm_will_draw_1_px() -> VM:
     return vm
 
 
-class TestDxyn:
+class TestDxynVFBehavior:
 
     def test_dxyn_sets_vf_when_turning_off_pixels(self, vm_will_draw_1_px):
         """Dxyn sets VF to 1 when overwriting a pixel"""
@@ -32,7 +31,6 @@ class TestDxyn:
             load_point=0x200 + INSTRUCTION_LENGTH
         )
         assert vm_will_draw_1_px.v_registers[0xF] == 1
-
 
     def test_dxyn_sets_vf_to_zero_when_no_pixels_turned_off(
             self,
