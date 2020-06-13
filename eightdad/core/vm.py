@@ -6,12 +6,15 @@ Timer and VM are implemented here.
 """
 from typing import Tuple, List
 from random import randrange
+
 from eightdad.core.bytecode import (
     PATTERN_IXII,
     PATTERN_INNN,
     PATTERN_IIII,
     PATTERN_IXKK,
-    PATTERN_IXYI)
+    PATTERN_IXYI,
+    PATTERN_IXYN
+)
 from eightdad.core.bytecode import Chip8Instruction
 from eightdad.core.video import VideoRam, DEFAULT_DIGITS
 
@@ -364,9 +367,16 @@ class Chip8VirtualMachine:
             self.handle_ixkk()
 
         elif pattern == PATTERN_IIII:
-            if self.instruction_parser.lo_byte == 0xEE:
+            # don't need hi byte, all base chip 8 IIII
+            # instructions have 00 hi byte
+            lo_byte = self.instruction_parser.lo_byte
+
+            if lo_byte == 0xEE:
                 self.stack_return()
                 self.program_increment = 0
+
+            elif lo_byte == 0xE0:
+                self.video_ram.clear_screen()
 
             else:
                 self.instruction_unhandled = True
@@ -393,6 +403,20 @@ class Chip8VirtualMachine:
 
                 else:
                     self.instruction_unhandled = True
+
+        elif pattern == PATTERN_IXYN:
+
+            x = self.instruction_parser.x
+            y = self.instruction_parser.y
+            n = self.instruction_parser.n
+
+            self.video_ram.draw_sprite(
+                self.v_registers[x],
+                self.v_registers[y],
+                self.memory,
+                n,
+                self.i_register
+            )
 
         else:
             self.instruction_unhandled = True
