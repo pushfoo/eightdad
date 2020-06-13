@@ -410,12 +410,14 @@ class Chip8VirtualMachine:
             y = self.instruction_parser.y
             n = self.instruction_parser.n
 
-            self.video_ram.draw_sprite(
-                self.v_registers[x],
-                self.v_registers[y],
-                self.memory,
-                n,
-                self.i_register
+            self.v_registers[0xF] = int(
+                self.video_ram.draw_sprite(
+                    self.v_registers[x],
+                    self.v_registers[y],
+                    self.memory,
+                    num_bytes=n,
+                    offset=self.i_register
+                )
             )
 
         else:
