@@ -83,12 +83,41 @@ class Chip8VirtualMachine:
             memory_size: int = 4096,
             execution_start: int = DEFAULT_EXECUTION_START,
             digit_start: int = 0x0,
-            ticks_per_second: int = 200
+            ticks_per_second: int = 200,
+            video_ram_type: type = VideoRam
     ):
+        """
+
+        Build a Chip-8 VM.
+
+        The video_ram_type is intended for passing subclasses that keep
+        track of tiling or other platform-specific display features to
+        improve drawing performance.
+
+        Avoiding redraw of unchanged pixels is the major intended usecase
+        for this feature. For example, a curses frontend using braille
+        characters as pixel blocks is one possibility.
+
+        :param display_size: A pair of values for the screen type.
+        :param display_wrap: whether drawing wraps
+        :param memory_size: how big RAM should be
+        :param execution_start: where to start execution
+        :param digit_start: where digits should start in ram
+        :param ticks_per_second: how fast execution happens
+        :param video_ram_type: a VideoRam class or subclass
+        """
         # initialize display-related functionality
         self.memory = bytearray(memory_size)
         width, height = display_size
-        self.video_ram = VideoRam(width, height, display_wrap)
+
+        if not isinstance(video_ram_type, type) \
+            or not issubclass(video_ram_type, VideoRam):
+
+            raise TypeError(
+                f"VideoRam subclass expected,"
+                f" not a {type(video_ram_type)}")
+
+        self.video_ram = video_ram_type(width, height, display_wrap)
 
         self.digits_memory_location, self.digit_length = 0, 0
         self.load_digits(DEFAULT_DIGITS, digit_start)
