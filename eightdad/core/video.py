@@ -3,6 +3,8 @@
 Video Ram and default sprite data
 
 No user-facing rendering code should be stored in this module.
+An exception is made for print_vram as it's meant for debugging, not
+general use.
 
 """
 from typing import Tuple
@@ -28,6 +30,7 @@ DEFAULT_DIGITS = [
     b'\xf0\x80\xf0\x80\x80'
 ]
 
+
 class VideoRam:
     """
     A 1-bit display memory that abstracts drawing chip-8 sprite data.
@@ -36,6 +39,7 @@ class VideoRam:
     Chip-8 programs in python.
 
     """
+
     def __init__(self, width: int = 64, height: int = 32, wrap: bool = False):
         """
         Create a VideoRam instance.
@@ -176,6 +180,7 @@ def print_vram(
     """
     Debug method to visualize current state, useful to call from debugger
 
+    :param vram: a VideoRam instance to visualize on the cli.
     :param pixel_on: character to draw on pixels with
     :param pixel_off: character to draw off pixels with
     """
