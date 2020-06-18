@@ -1,5 +1,5 @@
 """
-This is a hacky stub that makes tests work. Why? Not yet sure. ¯\_(ツ)_/¯
+This is a hacky stub that makes tests work. Why? Not yet sure. ¯\\_(ツ)_/¯
 A python discord user suggested this fix, and didn't elaborate.
 
 In the past, tests ran fine with util.py being auto-imported from the
