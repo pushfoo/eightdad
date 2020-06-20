@@ -14,6 +14,11 @@ setup(
     name='eightdad',
     version='0.0.1',
     packages=find_packages(),
+    entry_points={
+        "console_scripts": [
+            'eightdad=eightdad.frontend.arcade_front:main'
+        ]
+    },
     install_requires=install_requires,
     tests_require=tests_require,
     url='https://github.com/pushfoo/eightdad',
