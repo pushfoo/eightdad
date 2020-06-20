@@ -73,7 +73,7 @@ class Chip8Front(arcade.Window):
     def on_update(self, delta_time: float):
         self.vm.tick(delta_time)
         self.texture.use(0)
-        self.texture.write(bytes(self.screen_buffer))
+        self.texture.write(self.screen_buffer)
 
 
     def on_draw(self):
