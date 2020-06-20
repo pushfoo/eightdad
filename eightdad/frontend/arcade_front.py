@@ -5,6 +5,9 @@ A modified version of einarf's Chip-8 display example in the arcade
 library. Original is under MIT license.
 
 """
+import sys
+from pathlib import Path
+
 import arcade
 from arcade.gl import geometry
 from arcade import get_projection
@@ -17,7 +20,7 @@ SCREEN_HEIGHT = 32 * 10
 
 class Chip8Front(arcade.Window):
 
-    def __init__(self, width, height, title):
+    def __init__(self, width, height, title, vm):
         super().__init__(width, height, title)
 
         # from einarf's original
@@ -51,16 +54,7 @@ class Chip8Front(arcade.Window):
                     }
                     """
         )
-        self.vm = Chip8VirtualMachine()
-
-        # draw 0 at VX,VY, add 6 to x, jump to start
-        self.vm.memory[0x200] = 0xD0
-        self.vm.memory[0x201] = 0x15
-
-        self.vm.memory[0x202] = 0x70
-        self.vm.memory[0x203] = 0x06
-
-        self.vm.memory[0x204] = 0x12
+        self.vm = vm
 
         # get a bytestring that can be written to GL texture
         self.screen_buffer = memoryview(self.vm.video_ram.pixels)
@@ -82,8 +76,51 @@ class Chip8Front(arcade.Window):
         self.texture.use(0)
         self.quad.render(self.program)
 
-if __name__ == "__main__":
-    Chip8Front(SCREEN_WIDTH, SCREEN_HEIGHT, "EightDAD")
+
+def exit_with_error(msg: str, error_code: int=1) -> None:
+    """
+    Display an error message and exit loudly with error code
+
+    :param msg: message to display
+    :param error_code: return error code to give to the shell
+    :return:
+    """
+    print(f"ERROR: {msg}", file=sys.stderr)
+    exit(error_code)
+
+
+def main() -> None:
+    """
+    Hacky launch function that stubs VM init and launch.
+
+    Most of this should probably go into a frontend baseclass.
+
+    :return:
+    """
+
+    data_file_path = Path(sys.argv[1]).resolve().expanduser()
+
+    if not data_file_path.exists():
+        exit_with_error(f"Can't find {data_file_path}")
+
+    vm = Chip8VirtualMachine()
+
+    with open(data_file_path, "rb") as rom_file:
+        rom_data = rom_file.read()
+
+        if len(rom_data) > len(vm.memory) - vm.program_counter:
+            exit_with_error(f"Rom file too big ({len(rom_data)})!")
+
+    # load data into the VM
+    vm.load_to_memory(rom_data, 0x200)
+    display_filename = data_file_path.stem + ''.join(data_file_path.suffixes)
+    Chip8Front(
+        SCREEN_WIDTH, SCREEN_HEIGHT,
+        f"EightDAD - {display_filename}",
+        vm
+    )
     arcade.run()
 
+if __name__ == "__main__":
+    main()
 
