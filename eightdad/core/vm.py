@@ -4,7 +4,7 @@ Core VM-related functionality for executing programs
 Timer and VM are implemented here.
 
 """
-from typing import Tuple, List
+from typing import Tuple, List, ByteString
 from random import randrange
 
 from eightdad.core.bytecode import (
@@ -54,6 +54,37 @@ class Timer:
 
 
 class Chip8VirtualMachine:
+
+    def load_to_memory(self, data: ByteString, location: int) -> None:
+        """
+        Load given data to a specific location in memory.
+
+        Data must be a ByteString or support the buffer protocol.
+
+        Raises IndexError if data is too long to be inserted at the passed
+        location, ie would extend past the end of memory.
+
+        :param data: a bytestring that supports buffer protocol
+        :param location: where in memory to load to
+        :return:
+        """
+        if location < 0:
+            raise IndexError("Location must be positive")
+
+        end = location + location + len(data)
+        if end > len(self.memory):
+            raise IndexError("Passed data extends past the end of memory")
+
+        # if it doesn't implement buffer protocol, error
+        try:
+            view = memoryview(data)
+        except Exception as e:
+            raise TypeError(
+                "data must be a ByteString or otherwise support the "
+                "buffer protocol."
+            ) from e
+
+        self.memory[location:end] = view
 
     def load_digits(self, source: List[bytes], location: int) -> None:
         """
