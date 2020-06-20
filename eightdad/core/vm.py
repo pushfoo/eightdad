@@ -71,7 +71,7 @@ class Chip8VirtualMachine:
         if location < 0:
             raise IndexError("Location must be positive")
 
-        end = location + location + len(data)
+        end = location + len(data)
         if end > len(self.memory):
             raise IndexError("Passed data extends past the end of memory")
 
@@ -100,12 +100,9 @@ class Chip8VirtualMachine:
         self.digit_length = max(map(len, source))
 
         current_start = location
-        current_end = self.digit_length
         for digit_data in source:
-
-            self.memory[current_start:current_end] = digit_data
+            self.load_to_memory(digit_data, current_start)
             current_start += self.digit_length
-            current_end += self.digit_length
 
     def __init__(
             self,
