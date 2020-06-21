@@ -13,6 +13,7 @@ from arcade.gl import geometry
 from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
+from eightdad.core.vm import upper_hex
 
 SCREEN_WIDTH = 64 * 10
 SCREEN_HEIGHT = 32 * 10
@@ -66,10 +67,27 @@ class Chip8Front(arcade.Window):
         self.quad = geometry.screen_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
         self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
 
+    def report_state(self) -> None:
+        vm = self.vm
+        print(
+            f"== state ==\n"
+            f"PC       : {vm.dump_current_pc_instruction_raw()}\n"
+            f"stack    : {vm.call_stack}\n"
+            f"registers: {[i for i in vm.v_registers]}"
+        )
+
     def on_update(self, delta_time: float):
         # only update when executing?
+        vm = self.vm
+
         if not self.paused:
-            self.vm.tick(delta_time)
+            self.report_state()
+            vm.tick(delta_time)
+
+            # this is the start of breakpoint functionality...
+            if vm.program_counter == 0x242:
+                print(f"paused at {upper_hex(0x242)}")
+                self.paused = True
 
         # screen updated always, for now
         self.texture.use(0)
@@ -83,9 +101,7 @@ class Chip8Front(arcade.Window):
     def on_key_press(self, symbol: int, modifiers: int):
         if self.paused:
             if symbol == arcade.key.SPACE:
-                print(
-                    f"state: {self.vm.dump_current_pc_instruction_raw()}"
-                )
+                self.report_state()
                 self.vm.tick(1 / 30.0)
 
 
