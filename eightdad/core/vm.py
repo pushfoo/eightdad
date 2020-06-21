@@ -447,7 +447,6 @@ class Chip8VirtualMachine:
 
             if lo_byte == 0xEE:
                 self.stack_return()
-                self.program_increment = 0
 
             elif lo_byte == 0xE0:
                 self.video_ram.clear_screen()
