@@ -360,8 +360,9 @@ class Chip8VirtualMachine:
             # x could == y and both could be 0xF.
             y_val = self.v_registers[y]
 
-            self.v_registers[x] = min(y_val << 1, 255)
-            self.v_registers[0xF] = y_val & 0x80
+            self.v_registers[x] = (y_val << 1) & 0xFF
+            self.v_registers[0xF] = (y_val >> 7) & 1
+
 
         else:
             self.instruction_unhandled = True
