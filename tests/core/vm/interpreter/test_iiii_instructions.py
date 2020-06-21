@@ -15,7 +15,7 @@ from tests.util import load_and_execute_instruction
 
 
 @pytest.mark.parametrize("call_location", (0xF00, 0x500))
-def test_00ee_returns_to_last_location(call_location):
+def test_00ee_returns_to_last_location_plus_two(call_location):
     """Return instruction returns to last location on the stack"""
     vm = VM()
     vm.stack_call(call_location)
@@ -25,7 +25,7 @@ def test_00ee_returns_to_last_location(call_location):
         0x00EE, # return instruction
         load_point=call_location
     )
-    assert vm.program_counter == DEFAULT_EXECUTION_START
+    assert vm.program_counter == DEFAULT_EXECUTION_START + 2
 
 
 @pytest.mark.parametrize("call_location", (0xF00, 0x500))

@@ -4,7 +4,7 @@ Core VM-related functionality for executing programs
 Timer and VM are implemented here.
 
 """
-from typing import Tuple, List, ByteString
+from typing import Tuple, List, ByteString, Iterable, Union
 from random import randrange
 
 from eightdad.core.bytecode import (
@@ -51,6 +51,22 @@ class Timer:
 
             if self.value > 0:
                 self.value -= 1
+
+
+def upper_hex(src: Union[int, Iterable[int]]) -> str:
+    """
+    Return uppercase hex of an int or byte source
+
+    :param src: an integer
+    :return: the number as uppercase hex, minus
+    """
+    if isinstance(src, int):
+        s = hex(src)[2:].upper()
+        if len(s) < 2:
+            return "0" + s
+        return s
+
+    return "".join((upper_hex(i) for i in src))
 
 
 class Chip8VirtualMachine:
@@ -245,7 +261,7 @@ class Chip8VirtualMachine:
 
         if type_nibble == 0xA:  # set I to nnn
             self.i_register = nnn
-            self.program_increment += INSTRUCTION_LENGTH
+            #self.program_increment += INSTRUCTION_LENGTH
 
         elif type_nibble == 0x2:  # call instruction
             self.program_increment = 0
@@ -344,8 +360,9 @@ class Chip8VirtualMachine:
             # x could == y and both could be 0xF.
             y_val = self.v_registers[y]
 
-            self.v_registers[x] = min(y_val << 1, 255)
-            self.v_registers[0xF] = y_val & 0x80
+            self.v_registers[x] = (y_val << 1) & 0xFF
+            self.v_registers[0xF] = (y_val >> 7) & 1
+
 
         else:
             self.instruction_unhandled = True
@@ -430,7 +447,6 @@ class Chip8VirtualMachine:
 
             if lo_byte == 0xEE:
                 self.stack_return()
-                self.program_increment = 0
 
             elif lo_byte == 0xE0:
                 self.video_ram.clear_screen()
@@ -483,10 +499,19 @@ class Chip8VirtualMachine:
         if self.instruction_unhandled:
             raise ValueError(
                 f"Unrecognized instruction "
-                f"{hex(self.memory[self.program_counter])}"
-                f"{hex(self.memory[self.program_counter+1])[2:]} "
-                f"at address {hex(self.program_counter)}"
+                f"{self.dump_current_pc_instruction_raw()}"
             )
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
+
+    def dump_current_pc_instruction_raw(self) -> str:
+        """
+        Debug helper that returns raw instruction + location
+
+        :return: raw instruction + address
+        """
+        pc = self.program_counter
+        return f"{upper_hex(self.memory[pc: pc + 2])}" \
+               f" @ {upper_hex(pc)}"
+

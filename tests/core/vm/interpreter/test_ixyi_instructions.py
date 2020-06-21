@@ -546,7 +546,7 @@ class Test8XYESetsVxToVyShiftedLeft1:
 
         load_and_execute_instruction(vm, 0x800E, x=x, y=y)
 
-        assert vm.v_registers[x] == min(b << 1, 255)
+        assert vm.v_registers[x] == 0xFF & (b << 1)
 
     @pytest.mark.parametrize("x", range(0, 16))
     @pytest.mark.parametrize("y", range(0, 16))

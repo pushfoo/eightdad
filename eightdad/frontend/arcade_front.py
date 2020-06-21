@@ -13,6 +13,7 @@ from arcade.gl import geometry
 from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
+from eightdad.core.vm import upper_hex
 
 SCREEN_WIDTH = 64 * 10
 SCREEN_HEIGHT = 32 * 10
@@ -20,7 +21,7 @@ SCREEN_HEIGHT = 32 * 10
 
 class Chip8Front(arcade.Window):
 
-    def __init__(self, width, height, title, vm):
+    def __init__(self, width, height, title, vm, paused: bool = False):
         super().__init__(width, height, title)
 
         # from einarf's original
@@ -54,7 +55,8 @@ class Chip8Front(arcade.Window):
                     }
                     """
         )
-        self.vm = vm
+        self.vm: Chip8VirtualMachine = vm
+        self.paused = paused
 
         # get a bytestring that can be written to GL texture
         self.screen_buffer = memoryview(self.vm.video_ram.pixels)
@@ -65,16 +67,42 @@ class Chip8Front(arcade.Window):
         self.quad = geometry.screen_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
         self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
 
+    def report_state(self) -> None:
+        vm = self.vm
+        print(
+            f"== state ==\n"
+            f"PC       : {vm.dump_current_pc_instruction_raw()}\n"
+            f"stack    : {vm.call_stack}\n"
+            f"registers: {[i for i in vm.v_registers]}"
+        )
+
     def on_update(self, delta_time: float):
-        self.vm.tick(delta_time)
+        # only update when executing?
+        vm = self.vm
+
+        if not self.paused:
+            self.report_state()
+            vm.tick(delta_time)
+
+            # this is the start of breakpoint functionality...
+            if vm.program_counter == 0x242:
+                print(f"paused at {upper_hex(0x242)}")
+                self.paused = True
+
+        # screen updated always, for now
         self.texture.use(0)
         self.texture.write(self.screen_buffer)
-
 
     def on_draw(self):
         self.clear()
         self.texture.use(0)
         self.quad.render(self.program)
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        if self.paused:
+            if symbol == arcade.key.SPACE:
+                self.report_state()
+                self.vm.tick(1 / 30.0)
 
 
 def exit_with_error(msg: str, error_code: int=1) -> None:
@@ -117,7 +145,8 @@ def main() -> None:
     Chip8Front(
         SCREEN_WIDTH, SCREEN_HEIGHT,
         f"EightDAD - {display_filename}",
-        vm
+        vm,
+        #paused=True
     )
     arcade.run()
 
