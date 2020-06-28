@@ -496,11 +496,11 @@ class Chip8VirtualMachine:
         else:
             self.instruction_unhandled = True
 
-        if self.instruction_unhandled:
-            raise ValueError(
-                f"Unrecognized instruction "
-                f"{self.dump_current_pc_instruction_raw()}"
-            )
+        # if self.instruction_unhandled:
+        #     raise ValueError(
+        #         f"Unrecognized instruction "
+        #         f"{self.dump_current_pc_instruction_raw()}"
+        #     )
 
         # advance by any amount we need to
         self.program_counter += self.program_increment

@@ -66,6 +66,8 @@ class Chip8Front(arcade.Window):
 
         self.quad = geometry.screen_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
         self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
+        self.update_rate = 1.0 / 30
+        self.breakpoints = set()
 
     def report_state(self) -> None:
         vm = self.vm
@@ -76,22 +78,42 @@ class Chip8Front(arcade.Window):
             f"registers: {[i for i in vm.v_registers]}"
         )
 
+    def set_update_rate(self, rate: float):
+        """
+        Wrapper that also sets a local update variable.
+
+        :param rate:
+        :return:
+        """
+        super().set_update_rate(rate)
+        self.update_rate = rate
+
+    def tick(self, delta_time: float):
+        vm = self.vm
+
+        self.report_state()
+
+        if vm.program_counter in self.breakpoints:
+            if not self.paused:
+                print(f"BREAKPOINT at {upper_hex(vm.program_counter)}")
+                self.paused = True
+                return
+
+        vm.tick(delta_time)
+
+        if self.vm.instruction_unhandled:
+            print(f"unhandled {self.vm.dump_current_pc_instruction_raw()}")
+
+        # screen updated always, for now
+        self.texture.use(0)
+        self.texture.write(self.screen_buffer)
+
     def on_update(self, delta_time: float):
         # only update when executing?
         vm = self.vm
 
         if not self.paused:
-            self.report_state()
-            vm.tick(delta_time)
-
-            # this is the start of breakpoint functionality...
-            if vm.program_counter == 0x242:
-                print(f"paused at {upper_hex(0x242)}")
-                self.paused = True
-
-        # screen updated always, for now
-        self.texture.use(0)
-        self.texture.write(self.screen_buffer)
+            self.tick(delta_time)
 
     def on_draw(self):
         self.clear()
@@ -99,10 +121,13 @@ class Chip8Front(arcade.Window):
         self.quad.render(self.program)
 
     def on_key_press(self, symbol: int, modifiers: int):
+
+        if symbol == arcade.key.SPACE:
+            self.paused = not self.paused
+
         if self.paused:
-            if symbol == arcade.key.SPACE:
-                self.report_state()
-                self.vm.tick(1 / 30.0)
+            if symbol == arcade.key.ENTER:
+                self.tick(self.update_rate)
 
 
 def exit_with_error(msg: str, error_code: int=1) -> None:
@@ -141,13 +166,16 @@ def main() -> None:
 
     # load data into the VM
     vm.load_to_memory(rom_data, 0x200)
+
     display_filename = data_file_path.stem + ''.join(data_file_path.suffixes)
-    Chip8Front(
+    front = Chip8Front(
         SCREEN_WIDTH, SCREEN_HEIGHT,
         f"EightDAD - {display_filename}",
         vm,
         #paused=True
     )
+    front.breakpoints.add(0x34E)
+
     arcade.run()
 
 if __name__ == "__main__":
