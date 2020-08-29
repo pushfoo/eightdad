@@ -1,6 +1,6 @@
 from pathlib import Path
 from eightdad.core import Chip8VirtualMachine as VM
-from typing import Union
+from typing import Union, Iterator, Tuple
 
 
 PathOrStr = Union[Path, str]
@@ -35,4 +35,19 @@ def exit_with_error(msg: str, error_code: int=1) -> None:
     """
     print(f"ERROR: {msg}", file=sys.stderr)
     exit(error_code)
+
+def screen_coordinates(
+        vm: VM,
+        x_step: int = 1,
+        y_step: int = 1
+    ) -> Iterator[Tuple[int, int]]:
+    """
+    Sugar method for generating all screen coordinates for a VM's vram.
+
+    :param vm: the VM to access the video ram for
+    """
+    vram = vm.video_ram
+    for x in range(0, vram.width, x_step):
+        for y in range(0, vram.height, y_step):
+            yield (x, y)
 
