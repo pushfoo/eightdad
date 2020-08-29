@@ -178,7 +178,7 @@ class Chip8VirtualMachine:
 
         self._delay_timer = Timer()
         self._sound_timer = Timer()
-
+        
         self.ticks_per_second = ticks_per_second
         self.tick_length = 1.0 / ticks_per_second
 
@@ -200,6 +200,12 @@ class Chip8VirtualMachine:
     @sound_timer.setter
     def sound_timer(self, value):
         self._sound_timer.value = value
+
+    def skip_next_instruction(self):
+        """
+        Sugar to skip instructions.
+        """
+        self.program_increment += INSTRUCTION_LENGTH
 
     def handle_ixii(self):
         """
@@ -261,7 +267,6 @@ class Chip8VirtualMachine:
 
         if type_nibble == 0xA:  # set I to nnn
             self.i_register = nnn
-            #self.program_increment += INSTRUCTION_LENGTH
 
         elif type_nibble == 0x2:  # call instruction
             self.program_increment = 0
@@ -284,11 +289,11 @@ class Chip8VirtualMachine:
 
         if type_nibble == 0x3:
             if self.v_registers[x] == kk:
-                self.program_increment += INSTRUCTION_LENGTH
+                self.skip_next_instruction()
 
         elif type_nibble == 0x4:
             if self.v_registers[x] != kk:
-                self.program_increment += INSTRUCTION_LENGTH
+                self.skip_next_instruction()
 
         elif type_nibble == 0x6:
             self.v_registers[x] = kk
@@ -469,11 +474,11 @@ class Chip8VirtualMachine:
 
                 if type_nibble == 0x5 and end_nibble == 0:
                     if self.v_registers[x] == self.v_registers[y]:
-                        self.program_increment += INSTRUCTION_LENGTH
+                        self.skip_next_instruction()
 
                 elif type_nibble == 0x9 and end_nibble == 0:
                     if self.v_registers[x] != self.v_registers[y]:
-                        self.program_increment += INSTRUCTION_LENGTH
+                        self.skip_next_instruction()
 
                 else:
                     self.instruction_unhandled = True
