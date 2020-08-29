@@ -7,8 +7,8 @@ improve my vim skills. It also doesn't use pure ncurses but that is
 neither easy or cross-platform.
 
 This may not be the final terminal frontend as asciimatics seems to
-have its own issuse that I am not yet certain of the best way to
-work around.
+have its own issues.I am not yet certain of the best way to
+work around those.
 
 Implemented so far:
     [x] rough non-square pixel rendering system
