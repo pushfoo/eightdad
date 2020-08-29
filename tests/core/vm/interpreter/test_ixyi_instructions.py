@@ -281,7 +281,7 @@ class Test8XY4AddsRegisters:
     @pytest.mark.parametrize("a", (1, 255))
     @pytest.mark.parametrize("b", (1,))
     def test_8xy4_sets_vx_to_sum_of_vx_and_vy(self, x, y, a, b):
-        """8xy4 sets VX to VX + VY, clamped to 255 max"""
+        """8xy4 sets VX to VX + VY, modulo 256"""
 
         vm = VM()
 
@@ -292,11 +292,10 @@ class Test8XY4AddsRegisters:
 
         load_and_execute_instruction(vm, 0x8004, x=x, y=y)
 
-        if x != y:
-            assert vm.v_registers[x] == min(a + b, 255)
-
-        else:  # any value xor itself yields zero
-            assert vm.v_registers[x] == min(2 * a, 255)
+        if x != y: 
+            assert vm.v_registers[x] == (a + b)  % 256
+        else:
+            assert vm.v_registers[x] == (a * 2) % 256
 
     # According to the spec, VF should override itself if it is set as the
     # destination of the sum. This behavior could be useful for checking

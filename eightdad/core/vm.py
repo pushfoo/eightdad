@@ -322,8 +322,9 @@ class Chip8VirtualMachine:
         elif lo_nibble == 0x4:
             unclamped_sum = self.v_registers[x] + self.v_registers[y]
 
-            # store the result clamped to 0-255
-            self.v_registers[x] = min(unclamped_sum, 255)
+            # store the result, masking anything higher than 256
+            # to imitate rollover. may be faster than modulo.
+            self.v_registers[x] = unclamped_sum & 0xFF
             # set vf to 1 if the operation overflowed
             self.v_registers[0xF] = int(unclamped_sum > 255)
 
