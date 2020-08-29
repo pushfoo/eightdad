@@ -174,8 +174,10 @@ class Chip8VirtualMachine:
         self.i_register = 0
         self.v_registers = bytearray(16)
         self.call_stack = []
-        self.waiting_for_keypress = False
 
+        self.waiting_for_keypress = False
+        self._keystates = [False] * 16  # Whether each key is down
+        
         self._delay_timer = Timer()
         self._sound_timer = Timer()
         
@@ -200,6 +202,15 @@ class Chip8VirtualMachine:
     @sound_timer.setter
     def sound_timer(self, value):
         self._sound_timer.value = value
+
+    def press(self, key: int) -> None:
+        self._keystates[key] = True
+   
+    def pressed(self, key: int) -> bool:
+        return self._keystates[key]
+
+    def release(self, key: int) -> None:
+        self._keystates[key] = False
 
     def skip_next_instruction(self):
         """
