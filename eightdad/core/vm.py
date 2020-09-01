@@ -175,7 +175,9 @@ class Chip8VirtualMachine:
         self.v_registers = bytearray(16)
         self.call_stack = []
 
-        self.waiting_for_keypress = False
+        # key-related variables
+        self.waiting_for_key = False
+        self.waiting_register = None
         self._keystates = [False] * 16  # Whether each key is down
         
         self._delay_timer = Timer()
@@ -220,47 +222,67 @@ class Chip8VirtualMachine:
 
     def handle_ixii(self):
         """
-        Execute timer-related instructions
+        Execute F and E type nibble instructions.
+
+        This includes:
+            - keypress handling
+            - setting timers
+            - some manipulation of I register (sprites, addition)
+            - bulk register save/load to/from location I in memory
         """
+        type_nibble = self.instruction_parser.type_nibble
         lo_byte = self.instruction_parser.lo_byte
         x = self.instruction_parser.x
+        
+        if type_nibble == 0xF:
+            
+            if lo_byte == 0x07:
+                self.v_registers[x] = self._delay_timer.value
 
-        if lo_byte == 0x07:
-            self.v_registers[x] = self._delay_timer.value
-        elif lo_byte == 0x15:
-            self._delay_timer.value = self.v_registers[x]
-        elif lo_byte == 0x18:
-            self._sound_timer.value = self.v_registers[x]
-        elif lo_byte == 0x1E:
-            self.i_register += self.v_registers[x]
-        elif lo_byte == 0x29:  # Fx29, I = Address of digit for value in Vx
-            digit = self.v_registers[x]
-            self.i_register = self.digits_memory_location +\
-                              (digit * self.digit_length)
+            elif lo_byte == 0x0A:  # Enter wait state until the VM gets a keypress
+                self.waiting_for_key = True
+                self.waiting_register = x
 
-        # Store BCD of Vx at I, I+1, I+2
-        elif lo_byte == 0x33:
-            reg_value = self.v_registers[x]
+            # Timers
+            elif lo_byte == 0x15:
+                self._delay_timer.value = self.v_registers[x]
+            elif lo_byte == 0x18:
+                self._sound_timer.value = self.v_registers[x]
+            
+            # I manipulation
+            elif lo_byte == 0x1E:
+                self.i_register += self.v_registers[x]
+            elif lo_byte == 0x29:  # Fx29, I = Address of digit for value in Vx
+                digit = self.v_registers[x]
+                self.i_register = self.digits_memory_location +\
+                                  (digit * self.digit_length)
 
-            ones = reg_value % 10
-            tens = ((reg_value - ones) % 100) // 10
-            hundreds = reg_value // 100
+            # Store BCD of Vx at I, I+1, I+2
+            elif lo_byte == 0x33:
+                reg_value = self.v_registers[x]
 
-            self.memory[self.i_register] = hundreds
-            self.memory[self.i_register + 1] = tens
-            self.memory[self.i_register + 2] = ones
+                ones = reg_value % 10
+                tens = ((reg_value - ones) % 100) // 10
+                hundreds = reg_value // 100
 
-        elif lo_byte == 0x55:  # save registers to memory starting at I
-            i = self.i_register
+                self.memory[self.i_register] = hundreds
+                self.memory[self.i_register + 1] = tens
+                self.memory[self.i_register + 2] = ones
 
-            for register in range(0, x + 1):
-                self.memory[i + register] = self.v_registers[register]
+            elif lo_byte == 0x55:  # save registers to memory starting at I
+                i = self.i_register
 
-        elif lo_byte == 0x65:
-            i = self.i_register
+                for register in range(0, x + 1):
+                    self.memory[i + register] = self.v_registers[register]
 
-            for register in range(0, x + 1):
-                self.v_registers[register] = self.memory[i + register]
+            elif lo_byte == 0x65:  # Load register from memory starting at I
+                i = self.i_register
+
+                for register in range(0, x + 1):
+                    self.v_registers[register] = self.memory[i + register]
+
+            else:
+                self.instruction_unhandled = True
 
         else:
             self.instruction_unhandled = True
@@ -421,27 +443,18 @@ class Chip8VirtualMachine:
         """
         return self.call_stack[-1]
 
-
-    def tick(self, dt: float) -> None:
+    def execute_instruction(self) -> None:
         """
-        Execute a single instruction at the allotted speed.
+        Execute an instruction if needed.
 
-        The length is specified so the timers know how fast to decrement.
+        This differs from tick as tick steps timers, then decides whether
+        to execute instruction based on waiting state.
 
-        :param dt: float, how long the instruction will take to execute.
-        :return:
         """
-
         # reset bookeeping to defaults
         self.program_increment = INSTRUCTION_LENGTH
         self.instruction_unhandled = False
 
-        # move timing forward
-        if not dt:
-            dt += self.tick_length
-
-        self._delay_timer.tick(dt)
-        self._sound_timer.tick(dt)
 
         # start interpretation
         self.instruction_parser.decode(self.memory, self.program_counter)
@@ -521,6 +534,24 @@ class Chip8VirtualMachine:
 
         # advance by any amount we need to
         self.program_counter += self.program_increment
+
+    def tick(self, dt: float = None) -> None:
+        """
+        Execute a single instruction at the allotted speed.
+
+        The length is specified so the timers know how fast to decrement.
+
+        :param dt: float, how long the instruction will take to execute.
+        :return:
+        """
+
+        # Advance timers, happens even when waiting for keypress.
+        if not dt:
+            dt += self.tick_length
+        
+        self._delay_timer.tick(dt)
+        self._sound_timer.tick(dt)
+        self.execute_instruction()
 
     def dump_current_pc_instruction_raw(self) -> str:
         """
