@@ -1,4 +1,5 @@
 import pytest
+from itertools import product
 from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.core.vm import INSTRUCTION_LENGTH
 from tests.util import load_and_execute_instruction as load_and_execute
@@ -27,7 +28,7 @@ class TestStateSet:
             vm.release(key)
             assert not vm.pressed(key)
 
-@pytest.mark.parametrize("x,key", range(0,16), range(0,16))
+@pytest.mark.parametrize("x,key", product(range(0,16), range(0,16)))
 class TestFX0APauseTillAnyKeypress:
     """
     Tests for waiting for a key press
