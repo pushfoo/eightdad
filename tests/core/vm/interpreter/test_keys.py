@@ -39,17 +39,19 @@ class TestFX0APauseTillAnyKeypress:
         vm = VM()
         start_position = vm.program_counter
         load_and_execute(vm, 0xF00A,x=x)
+        vm.memory[514] = 0xA0
         vm.tick(1/20.0)
-        assert vm.program_counter == start_position
+        assert vm.program_counter == start_position + INSTRUCTION_LENGTH
 
     def test_fx0a_resumes_after_keypress(self, x: int, key: int):
         """Execution is resumed after fx0a after a key is pressed"""
         vm = VM()
         start_position = vm.program_counter
+        vm.memory[514] = 0xA0
         load_and_execute(vm, 0xF00A, x=x)
         vm.press(key)
         vm.tick(1/20.0)
-        assert vm.program_counter == start_position + INSTRUCTION_LENGTH
+        assert vm.program_counter == start_position + (INSTRUCTION_LENGTH * 2)
 
     def test_fx0a_sets_register_targeted(self, x: int, key: int):
         """A keypress while waiting sets the register to the requested state"""
