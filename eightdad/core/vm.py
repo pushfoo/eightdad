@@ -551,7 +551,25 @@ class Chip8VirtualMachine:
         
         self._delay_timer.tick(dt)
         self._sound_timer.tick(dt)
-        self.execute_instruction()
+        
+#        self.waiting_for_key = False
+#        self.waiting_register = None
+#        self._keystates = [False] * 16  # Whether each key is down
+
+        # this is crude and only registers the first keypress
+        # numerically. in the future an event queueing method may be
+        # better for this. YAGNI applies for now though.
+        if self.waiting_for_key:
+            keys = self._keystates
+            if self.waiting_register != None:
+                pressed_indices = [i for i, v in enumerate(keys) if v]
+                if pressed_indices:
+                    self.v_registers[self.waiting_register] = pressed_indices[0]
+                    self.waiting_for_key = False
+
+        # check again because we might have had a keypress happen
+        if not self.waiting_for_key:
+           self.execute_instruction()
 
     def dump_current_pc_instruction_raw(self) -> str:
         """
@@ -561,5 +579,5 @@ class Chip8VirtualMachine:
         """
         pc = self.program_counter
         return f"{upper_hex(self.memory[pc: pc + 2])}" \
-               f" @ {upper_hex(pc)}"
+               f" @ 0x{upper_hex(pc)}"
 
