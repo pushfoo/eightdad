@@ -285,10 +285,17 @@ class Chip8VirtualMachine:
                 self.instruction_unhandled = True
         elif type_nibble == 0xE:
             # one of the keypress skip instructions
-            if lo_byte == 0x9E:
+
+            # get the key for value in VX
+            key_pressed = self._keystates[self.v_registers[x]]
+            
+            if lo_byte == 0xA1:
+                if not key_pressed:
+                    self.skip_next_instruction()
+
+            elif lo_byte == 0x9E:
                 # skip next instruction if key in register X is pressed
-                key = self.v_registers[x]
-                if self._keystates[key]:
+                if key_pressed:
                     self.skip_next_instruction()
             else:
                 self.instruction_unhandled = True
