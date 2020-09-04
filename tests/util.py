@@ -3,7 +3,7 @@ from typing import Tuple, Any, Iterable, Dict
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.bytecode import Chip8Instruction as Instruction
-from eightdad.core.vm import DEFAULT_EXECUTION_START
+from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
 
 
 def dict_to_argtuples(
@@ -51,6 +51,37 @@ def load_instruction(
 
     i.pack_into(vm.memory, offset=load_point)
 
+def load_multiple(
+    vm: Chip8VirtualMachine,
+    *instructions,
+    load_point: int = DEFAULT_EXECUTION_START
+) -> None:
+    """
+    Attempts to template and load multiple instructions to memory.
+
+    the templates_and_args parameters should be in one of the 
+    following forms:
+        ( template_int, dict_of_kwargs )
+        template_int
+
+    :param vm: the chip8 VM to load to
+    :param templates_and_args: iterables with at least a template
+    :param load_point: a position in memory to start loading to
+    """
+    current_location = load_point
+    for instruction in instructions:
+        if isinstance(instruction, int):
+            load_instruction(vm, instruction, load_point=current_location)
+
+        else:
+            template, kwargs = instruction
+            load_instruction(
+                vm,
+                template,
+                **kwargs,
+                load_point=current_location
+            )
+        current_location += INSTRUCTION_LENGTH
 
 def load_and_execute_instruction(
     vm: Chip8VirtualMachine,
