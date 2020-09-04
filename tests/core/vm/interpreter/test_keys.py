@@ -107,4 +107,38 @@ class TestEX9ESkipIfKeyInXPressed:
         vm.tick(1/20.0)
         assert vm.program_counter == DEFAULT_EXECUTION_START + INSTRUCTION_LENGTH
 
+@pytest.mark.parametrize("x,key", KEYS_AND_REGISTERS) 
+class TestEXA1SkipIfKeyInXNotPressed:
+    
+    def setup_vm(self, x: int, key: int) -> VM:
+        """
+        Helper function to set up the VM and template instructions
+        """
+        vm = VM()
+        load_multiple(
+            vm,
+            (0xE0A1, { 'x' : x } ),
+            # set the I register. This command can't touch that I, and
+            # I is set to zero on VM initialization. Therefore, it is
+            # safe to use I as a test condition for ex9e.
+            0xA0FF
+        )
+        vm.v_registers[x] = key
+        return vm
+
+    def test_exa1_skips_next_instruction_if_key_in_vx_is_up(self, x: int, key: int):
+        """EXA1 Skips next instruction if the key in VX is up"""
+        vm = self.setup_vm(x, key)
+        vm.i_register = 1
+        vm.tick(1/20.0)
+        assert vm.program_counter == DEFAULT_EXECUTION_START + (2 * INSTRUCTION_LENGTH)
+        assert vm.i_register == 1
+
+    def test_exa1_executes_next_instruction_if_key_in_vx_down(self, x: int, key: int):
+        """EXA1 allows next instruction to execute if the key in VX is down"""
+        vm = self.setup_vm(x, key)
+        vm.press(key)
+        vm.tick(1/20.0)
+        assert vm.program_counter == DEFAULT_EXECUTION_START + INSTRUCTION_LENGTH
+        assert vm.i_register == 0xFF
 
