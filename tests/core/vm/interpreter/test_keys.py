@@ -140,5 +140,4 @@ class TestEXA1SkipIfKeyInXNotPressed:
         vm.press(key)
         vm.tick(1/20.0)
         assert vm.program_counter == DEFAULT_EXECUTION_START + INSTRUCTION_LENGTH
-        assert vm.i_register == 0xFF
 
