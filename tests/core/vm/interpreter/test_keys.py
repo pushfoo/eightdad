@@ -5,6 +5,7 @@ from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
 from tests.util import load_and_execute_instruction as load_and_execute
 from tests.util import load_multiple
 
+# should find a way to make this a configurable project-wide fixture
 KEYS_AND_REGISTERS = list(product(range(0,1), range(0,1)))
 
 
@@ -60,6 +61,8 @@ class TestFX0APauseTillAnyKeypress:
         """Execution is resumed after fx0a after a key is pressed"""
         vm = self.setup_vm(x)
         vm.press(key)
+        # tick twice to make sure we execute both instructions
+        vm.tick(1/20.0)
         vm.tick(1/20.0)
         assert vm.program_counter == DEFAULT_EXECUTION_START + (INSTRUCTION_LENGTH * 2)
 
