@@ -174,11 +174,15 @@ class Chip8VirtualMachine:
         self.i_register = 0
         self.v_registers = bytearray(16)
         self.call_stack = []
-        self.waiting_for_keypress = False
 
+        # key-related variables
+        self.waiting_for_key = False
+        self.waiting_register = None
+        self._keystates = [False] * 16  # Whether each key is down
+        
         self._delay_timer = Timer()
         self._sound_timer = Timer()
-
+        
         self.ticks_per_second = ticks_per_second
         self.tick_length = 1.0 / ticks_per_second
 
@@ -201,50 +205,100 @@ class Chip8VirtualMachine:
     def sound_timer(self, value):
         self._sound_timer.value = value
 
+    def press(self, key: int) -> None:
+        self._keystates[key] = True
+   
+    def pressed(self, key: int) -> bool:
+        return self._keystates[key]
+
+    def release(self, key: int) -> None:
+        self._keystates[key] = False
+
+    def skip_next_instruction(self):
+        """
+        Sugar to skip instructions.
+        """
+        self.program_increment += INSTRUCTION_LENGTH
+
     def handle_ixii(self):
         """
-        Execute timer-related instructions
+        Execute F and E type nibble instructions.
+
+        This includes:
+            - keypress handling
+            - setting timers
+            - some manipulation of I register (sprites, addition)
+            - bulk register save/load to/from location I in memory
         """
+        type_nibble = self.instruction_parser.type_nibble
         lo_byte = self.instruction_parser.lo_byte
         x = self.instruction_parser.x
+        
+        if type_nibble == 0xF:
+            
+            if lo_byte == 0x07:
+                self.v_registers[x] = self._delay_timer.value
 
-        if lo_byte == 0x07:
-            self.v_registers[x] = self._delay_timer.value
-        elif lo_byte == 0x15:
-            self._delay_timer.value = self.v_registers[x]
-        elif lo_byte == 0x18:
-            self._sound_timer.value = self.v_registers[x]
-        elif lo_byte == 0x1E:
-            self.i_register += self.v_registers[x]
-        elif lo_byte == 0x29:  # Fx29, I = Address of digit for value in Vx
-            digit = self.v_registers[x]
-            self.i_register = self.digits_memory_location +\
-                              (digit * self.digit_length)
+            elif lo_byte == 0x0A:  # Enter wait state until the VM gets a keypress
+                self.waiting_for_key = True
+                self.waiting_register = x
 
-        # Store BCD of Vx at I, I+1, I+2
-        elif lo_byte == 0x33:
-            reg_value = self.v_registers[x]
+            # Timers
+            elif lo_byte == 0x15:
+                self._delay_timer.value = self.v_registers[x]
+            elif lo_byte == 0x18:
+                self._sound_timer.value = self.v_registers[x]
+            
+            # I manipulation
+            elif lo_byte == 0x1E:
+                self.i_register += self.v_registers[x]
+            elif lo_byte == 0x29:  # Fx29, I = Address of digit for value in Vx
+                digit = self.v_registers[x]
+                self.i_register = self.digits_memory_location +\
+                                  (digit * self.digit_length)
 
-            ones = reg_value % 10
-            tens = ((reg_value - ones) % 100) // 10
-            hundreds = reg_value // 100
+            # Store BCD of Vx at I, I+1, I+2
+            elif lo_byte == 0x33:
+                reg_value = self.v_registers[x]
 
-            self.memory[self.i_register] = hundreds
-            self.memory[self.i_register + 1] = tens
-            self.memory[self.i_register + 2] = ones
+                ones = reg_value % 10
+                tens = ((reg_value - ones) % 100) // 10
+                hundreds = reg_value // 100
 
-        elif lo_byte == 0x55:  # save registers to memory starting at I
-            i = self.i_register
+                self.memory[self.i_register] = hundreds
+                self.memory[self.i_register + 1] = tens
+                self.memory[self.i_register + 2] = ones
 
-            for register in range(0, x + 1):
-                self.memory[i + register] = self.v_registers[register]
+            elif lo_byte == 0x55:  # save registers to memory starting at I
+                i = self.i_register
 
-        elif lo_byte == 0x65:
-            i = self.i_register
+                for register in range(0, x + 1):
+                    self.memory[i + register] = self.v_registers[register]
 
-            for register in range(0, x + 1):
-                self.v_registers[register] = self.memory[i + register]
+            elif lo_byte == 0x65:  # Load register from memory starting at I
+                i = self.i_register
 
+                for register in range(0, x + 1):
+                    self.v_registers[register] = self.memory[i + register]
+
+            else:
+                self.instruction_unhandled = True
+        elif type_nibble == 0xE:
+            # one of the keypress skip instructions
+
+            # get the key for value in VX
+            key_pressed = self._keystates[self.v_registers[x]]
+            
+            if lo_byte == 0xA1:
+                if not key_pressed:
+                    self.skip_next_instruction()
+
+            elif lo_byte == 0x9E:
+                # skip next instruction if key in register X is pressed
+                if key_pressed:
+                    self.skip_next_instruction()
+            else:
+                self.instruction_unhandled = True
         else:
             self.instruction_unhandled = True
 
@@ -261,7 +315,6 @@ class Chip8VirtualMachine:
 
         if type_nibble == 0xA:  # set I to nnn
             self.i_register = nnn
-            #self.program_increment += INSTRUCTION_LENGTH
 
         elif type_nibble == 0x2:  # call instruction
             self.program_increment = 0
@@ -284,11 +337,11 @@ class Chip8VirtualMachine:
 
         if type_nibble == 0x3:
             if self.v_registers[x] == kk:
-                self.program_increment += INSTRUCTION_LENGTH
+                self.skip_next_instruction()
 
         elif type_nibble == 0x4:
             if self.v_registers[x] != kk:
-                self.program_increment += INSTRUCTION_LENGTH
+                self.skip_next_instruction()
 
         elif type_nibble == 0x6:
             self.v_registers[x] = kk
@@ -405,27 +458,18 @@ class Chip8VirtualMachine:
         """
         return self.call_stack[-1]
 
-
-    def tick(self, dt: float) -> None:
+    def execute_instruction(self) -> None:
         """
-        Execute a single instruction at the allotted speed.
+        Execute an instruction if needed.
 
-        The length is specified so the timers know how fast to decrement.
+        This differs from tick as tick steps timers, then decides whether
+        to execute instruction based on waiting state.
 
-        :param dt: float, how long the instruction will take to execute.
-        :return:
         """
-
         # reset bookeeping to defaults
         self.program_increment = INSTRUCTION_LENGTH
         self.instruction_unhandled = False
 
-        # move timing forward
-        if not dt:
-            dt += self.tick_length
-
-        self._delay_timer.tick(dt)
-        self._sound_timer.tick(dt)
 
         # start interpretation
         self.instruction_parser.decode(self.memory, self.program_counter)
@@ -469,11 +513,11 @@ class Chip8VirtualMachine:
 
                 if type_nibble == 0x5 and end_nibble == 0:
                     if self.v_registers[x] == self.v_registers[y]:
-                        self.program_increment += INSTRUCTION_LENGTH
+                        self.skip_next_instruction()
 
                 elif type_nibble == 0x9 and end_nibble == 0:
                     if self.v_registers[x] != self.v_registers[y]:
-                        self.program_increment += INSTRUCTION_LENGTH
+                        self.skip_next_instruction()
 
                 else:
                     self.instruction_unhandled = True
@@ -506,6 +550,42 @@ class Chip8VirtualMachine:
         # advance by any amount we need to
         self.program_counter += self.program_increment
 
+    def tick(self, dt: float = None) -> None:
+        """
+        Execute a single instruction at the allotted speed.
+
+        The length is specified so the timers know how fast to decrement.
+
+        :param dt: float, how long the instruction will take to execute.
+        :return:
+        """
+
+        # Advance timers, happens even when waiting for keypress.
+        if not dt:
+            dt += self.tick_length
+        
+        self._delay_timer.tick(dt)
+        self._sound_timer.tick(dt)
+        
+#        self.waiting_for_key = False
+#        self.waiting_register = None
+#        self._keystates = [False] * 16  # Whether each key is down
+
+        # this is crude and only registers the first keypress
+        # numerically. in the future an event queueing method may be
+        # better for this. YAGNI applies for now though.
+        if self.waiting_for_key:
+            keys = self._keystates
+            if self.waiting_register != None:
+                pressed_indices = [i for i, v in enumerate(keys) if v]
+                if pressed_indices:
+                    self.v_registers[self.waiting_register] = pressed_indices[0]
+                    self.waiting_for_key = False
+
+        # check again because we might have had a keypress happen
+        if not self.waiting_for_key:
+           self.execute_instruction()
+
     def dump_current_pc_instruction_raw(self) -> str:
         """
         Debug helper that returns raw instruction + location
@@ -514,5 +594,5 @@ class Chip8VirtualMachine:
         """
         pc = self.program_counter
         return f"{upper_hex(self.memory[pc: pc + 2])}" \
-               f" @ {upper_hex(pc)}"
+               f" @ 0x{upper_hex(pc)}"
 
