@@ -73,3 +73,39 @@ class TestFX0APauseTillAnyKeypress:
         vm.tick(1/20.0)
         assert vm.v_registers[x] == key
 
+@pytest.mark.parametrize("x,key", KEYS_AND_REGISTERS) 
+class TestEX9ESkipIfKeyInXPressed:
+    
+    def setup_vm(self, x: int, key: int) -> VM:
+        """
+        Helper function to set up the VM and template instructions
+        """
+        vm = VM()
+        load_multiple(
+            vm,
+            (0xE09E, { 'x' : x } ),
+            # set the I register. This command can't touch that I, and
+            # I is set to zero on VM initialization. Therefore, it is
+            # safe to use I as a test condition for ex9e.
+            0xA0FF
+        )
+        vm.v_registers[x] = key
+        return vm
+
+    def test_ex9e_skips_if_key_pressed(self, x: int, key: int):
+        """EX9E Skips the next instruction if key in VX is pressed"""
+        vm = self.setup_vm(x, key)
+        vm.i_register = 1
+        vm.press(key)
+        vm.tick(1/20.0)
+        assert vm.program_counter == DEFAULT_EXECUTION_START + (2 * INSTRUCTION_LENGTH)
+        assert vm.i_register == 1
+
+    def test_ex9e_does_not_skip_if_key_up(self, x: int, key: int):
+        """EX9E doesn't skip next instruction if key is up"""
+        vm = self.setup_vm(x, key)
+        vm.tick(1/20.0)
+        assert vm.program_counter == DEFAULT_EXECUTION_START + INSTRUCTION_LENGTH
+        assert vm.i_register == 0xFF
+
+
