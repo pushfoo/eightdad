@@ -27,7 +27,7 @@ from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.frontend.util import (
         load_rom_to_vm, exit_with_error, screen_coordinates
 )
-
+from eightdad.frontend import keymap
 
 FULL = "\u2588"
 HALF_TOP = "\u2580"
@@ -112,17 +112,34 @@ def run_emu(screen: Screen, render_method=render_halfchars) -> None:
 
     paused = False
 
+    # load keymap in an ugly but functional way
+    # later versions of this should be a function that
+    # takes a converter function to map between keys and
+    # their frontend-specific representation. this will
+    # make loading generic while still retaining compatibility
+    # with various frontends.
+    final_keymap = {}
+    for vm_keyid, char in keymap.DEFAULT.items():
+        final_keymap[ord(char)] = vm_keyid
+        final_keymap[ord(char.upper())] = vm_keyid
+        
     while True:
         
         ev = screen.get_key()
-        if ev in (ord('Q'), ord('q')):
+        if ev in (ord('H'), ord('h')):
             return
         
-        if ev == ord(' '):
+        if ev == ord('p'):
             paused = not paused
-
+        
         if not paused:
+            if ev in final_keymap:
+                vm.press(final_keymap[ev])
+
             vm.tick(1/20.0)
+            
+            if ev in final_keymap:
+                vm.release(final_keymap[ev])
 
         render_method(screen, vm)
         screen.refresh()
