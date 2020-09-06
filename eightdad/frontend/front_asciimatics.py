@@ -21,6 +21,7 @@ from pathlib import Path
 
 from asciimatics.screen import Screen
 from eightdad.core import Chip8VirtualMachine as VM
+from eightdad.frontend.keymap import build_hexkey_mapping
 from eightdad.frontend.util import (
     load_rom_to_vm, exit_with_error, screen_coordinates
 )
@@ -124,10 +125,7 @@ def run_emu(screen: Screen, render_method=render_halfchars) -> None:
     # their frontend-specific representation. this will
     # make loading generic while still retaining compatibility
     # with various frontends.
-    final_keymap = {}
-    for vm_keyid, char in keymap.DEFAULT.items():
-        final_keymap[ord(char)] = vm_keyid
-        final_keymap[ord(char.upper())] = vm_keyid
+    final_keymap = build_hexkey_mapping()
 
     while True:
 

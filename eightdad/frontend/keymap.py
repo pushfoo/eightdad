@@ -1,3 +1,4 @@
+from typing import Dict, Any
 
 DEFAULT = {
     0x1: '1',
@@ -18,4 +19,23 @@ DEFAULT = {
     0xF: 'f'
 }
 
+def build_hexkey_mapping(
+        src_dict: Dict[int, Any] = DEFAULT
+) -> Dict[int, Any]:
+    """
+    Build a dictionary that maps character codes to chip8 hex keys.
 
+    This works for both asciimatics and arcade at the moment as they
+    both use the ordinal unicode value for keys in their key press
+    representations.
+
+    :param src_dict:
+    :return:
+    """
+    final_keymap = {}
+    for vm_keyid, char in src_dict.items():
+        final_keymap[ord(char)] = vm_keyid
+        # account for the possibility of shift being held down
+        final_keymap[ord(char.upper())] = vm_keyid
+
+    return final_keymap
