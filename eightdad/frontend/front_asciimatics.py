@@ -1,14 +1,11 @@
 """
-Rough console-capable emulator frontend.
+Rough cross-platform console mode emulator frontend.
 
-This probably won't be as good as running on a GL-backed frontend, but
-it will run in places it won't. I'm mostly writing this as a way to
-improve my vim skills. It also doesn't use pure ncurses but that is
-neither easy or cross-platform.
+It will work on Windows, but relies on a third party library to do so.
 
-This may not be the final terminal frontend as asciimatics seems to
-have its own issues.I am not yet certain of the best way to
-work around those.
+It will never support key-up events due to the way the unix terminal
+evolved. See the following blog post for more info:
+https://blog.robertelder.org/detect-keyup-event-linux-terminal/
 
 Implemented so far:
     [x] rough non-square pixel rendering system
@@ -25,19 +22,22 @@ from pathlib import Path
 from asciimatics.screen import Screen
 from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.frontend.util import (
-        load_rom_to_vm, exit_with_error, screen_coordinates
+    load_rom_to_vm, exit_with_error, screen_coordinates
 )
 from eightdad.frontend import keymap
 
+# unicode escape codes for full block and half block characters. the
+# half-block characters allow a console to emulate square pixels by
+# assigning a single character to display two pixels and then filling
+# it with the appropriate characters.
 FULL = "\u2588"
 HALF_TOP = "\u2580"
 HALF_LOW = "\u2584"
 
-
-DEFAULT_COLORS = [
+DEFAULT_COLORS = (
     Screen.COLOUR_BLACK,
     Screen.COLOUR_WHITE
-]
+)
 
 
 def render_fullchars(
@@ -47,21 +47,27 @@ def render_fullchars(
         colours=DEFAULT_COLORS,
         block_char: str = FULL) -> None:
     """
-    Helper to render the screen using full-height ascii chars.
+    Helper to render the screen using full-height characters.
 
-    Not very fancy, but it's probably compatible with everything.
+    Unless the user has set up a square font for their console, this
+    will likely show up as non-square pixels in the terminal.
+
+    Not very fancy, but it's probably compatible with everything. If
+    for some reason you are using this on a system that doesn't support
+    unicode characters or background colors, you can set block_char to
+    something like '#' and the display should still work.
 
     :param screen: asciimatics screen to draw to
     :param vm: the Chip 8 VM to source vram from
     :param x_start: where to start drawing the display area
     :param y_start: where to to start drawing the display area
     :param colours: a list of asciimatics colors to draw in
-    :param chars: what tile set to use.
+    :param block_char: what tile to use for showing a full pixel.
     """
-    vram=vm.video_ram
-    for x,y in screen_coordinates(vm):
+    vram = vm.video_ram
+    for x, y in screen_coordinates(vm):
         screen.print_at(
-            block_char if vram[x,y] else ' ',
+            block_char if vram[x, y] else ' ',
             x + x_start, y + y_start,
             colour=colours[1],
             bg=colours[0]
@@ -73,23 +79,23 @@ def render_halfchars(
         vm: VM,
         x_start: int = 0, y_start: int = 1,
         colours=DEFAULT_COLORS
-    ) -> None:
+) -> None:
     """
     Render the screen with half-height block characters.
     
-    :param scren: which screen to draw to
+    :param screen: which screen to draw to
     :param vm: a chip 8 VM to render the screen of
     :param x_start: where to start drawing the display area
     :param y_start: where to to start drawing the display area
-    :param colours: a list of asciimatics colors to draw in
+    :param colours: a list of asciimatics colors to draw with.
     """
-    vram=vm.video_ram
-    for x,y in screen_coordinates(vm, y_step = 2):
+    vram = vm.video_ram
+    for x, y in screen_coordinates(vm, y_step=2):
         screen.print_at(
-                HALF_TOP,
-                x_start + x,y_start + y // 2,
-                colour=colours[vram[x,y]],
-                bg=colours[vram[x,y+1]]
+            HALF_TOP,
+            x_start + x, y_start + y // 2,
+            colour=colours[vram[x, y]],
+            bg=colours[vram[x, y + 1]]
         )
 
 
@@ -101,7 +107,7 @@ def run_emu(screen: Screen, render_method=render_halfchars) -> None:
     rom_filename = Path(sys.argv[1]).resolve().expanduser()
     screen.print_at(f"Got rom {rom_filename!r}, press any key to continue...", 0, 0)
     ev = screen.get_key()
-    
+
     vm = VM()
     try:
         load_rom_to_vm(rom_filename, vm)
@@ -122,28 +128,27 @@ def run_emu(screen: Screen, render_method=render_halfchars) -> None:
     for vm_keyid, char in keymap.DEFAULT.items():
         final_keymap[ord(char)] = vm_keyid
         final_keymap[ord(char.upper())] = vm_keyid
-        
+
     while True:
-        
+
         ev = screen.get_key()
         if ev in (ord('H'), ord('h')):
             return
-        
+
         if ev == ord('p'):
             paused = not paused
-        
+
         if not paused:
             if ev in final_keymap:
                 vm.press(final_keymap[ev])
 
-            vm.tick(1/20.0)
-            
+            vm.tick(1 / 20.0)
+
             if ev in final_keymap:
                 vm.release(final_keymap[ev])
 
         render_method(screen, vm)
         screen.refresh()
-
 
 
 Screen.wrapper(run_emu)
