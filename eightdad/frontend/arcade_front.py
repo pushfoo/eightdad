@@ -175,9 +175,7 @@ def main() -> None:
         SCREEN_WIDTH, SCREEN_HEIGHT,
         f"EightDAD - {display_filename}",
         vm,
-        #paused=True
     )
-    front.breakpoints.add(0x34E)
 
     arcade.run()
 
