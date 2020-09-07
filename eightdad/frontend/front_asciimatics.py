@@ -15,17 +15,12 @@ Implemented so far:
 
 """
 import sys
-from typing import List
-from random import randint
-from pathlib import Path
 
 from asciimatics.screen import Screen
 from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.frontend.keymap import build_hexkey_mapping
 from eightdad.frontend.util import (
-    load_rom_to_vm, exit_with_error, screen_coordinates
-)
-from eightdad.frontend import keymap
+    load_rom_to_vm, exit_with_error, screen_coordinates, clean_path)
 
 # unicode escape codes for full block and half block characters. the
 # half-block characters allow a console to emulate square pixels by
@@ -105,15 +100,11 @@ def run_emu(screen: Screen, render_method=render_halfchars) -> None:
     Asciimatics runner function to wrap, render the screen
 
     """
-    rom_filename = Path(sys.argv[1]).resolve().expanduser()
-    screen.print_at(f"Got rom {rom_filename!r}, press any key to continue...", 0, 0)
-    ev = screen.get_key()
-
-    vm = VM()
+    path = clean_path(sys.argv[1])
     try:
-        load_rom_to_vm(rom_filename, vm)
+        vm = load_rom_to_vm(path)
     except IOError as e:
-        exit_with_error(f"Could not read {rom_filename!r}: {e!r}")
+        exit_with_error(f"Could not read {path!r} : {e!r}")
     except IndexError as e:
         exit_with_error(f"Rom size appears incorrect: {e!r}")
 
