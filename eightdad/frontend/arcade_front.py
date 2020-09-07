@@ -14,6 +14,7 @@ from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.vm import upper_hex
+from eightdad.frontend.util import clean_path, load_rom_to_vm
 
 SCREEN_WIDTH = 64 * 10
 SCREEN_HEIGHT = 32 * 10
@@ -150,24 +151,15 @@ def main() -> None:
 
     :return:
     """
+    path = clean_path(sys.argv[1])
+    try:
+        vm = load_rom_to_vm(path)
+    except IOError as e:
+        exit_with_error(f"Could not read {path!r} : {e!r}")
+    except IndexError as e:
+        exit_with_error(f"Could not load rom: {e!r}")
 
-    data_file_path = Path(sys.argv[1]).resolve().expanduser()
-
-    if not data_file_path.exists():
-        exit_with_error(f"Can't find {data_file_path}")
-
-    vm = Chip8VirtualMachine()
-
-    with open(data_file_path, "rb") as rom_file:
-        rom_data = rom_file.read()
-
-        if len(rom_data) > len(vm.memory) - vm.program_counter:
-            exit_with_error(f"Rom file too big ({len(rom_data)})!")
-
-    # load data into the VM
-    vm.load_to_memory(rom_data, 0x200)
-
-    display_filename = data_file_path.stem + ''.join(data_file_path.suffixes)
+    display_filename = path.stem + ''.join(path.suffixes)
     front = Chip8Front(
         SCREEN_WIDTH, SCREEN_HEIGHT,
         f"EightDAD - {display_filename}",
