@@ -14,6 +14,7 @@ from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.vm import upper_hex
+from eightdad.frontend.keymap import build_hexkey_mapping
 from eightdad.frontend.util import clean_path, load_rom_to_vm
 
 SCREEN_WIDTH = 64 * 10
@@ -58,6 +59,7 @@ class Chip8Front(arcade.Window):
         )
         self.vm: Chip8VirtualMachine = vm
         self.paused = paused
+        self.keymap = build_hexkey_mapping()
 
         # get a bytestring that can be written to GL texture
         self.screen_buffer = memoryview(self.vm.video_ram.pixels)
@@ -121,9 +123,18 @@ class Chip8Front(arcade.Window):
         self.texture.use(0)
         self.quad.render(self.program)
 
+    def on_key_release(self, symbol: int, modifiers: int):
+        if symbol in self.keymap:
+            mapped = self.keymap[symbol]
+            self.vm.release(mapped)
+            print(f"Released {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
     def on_key_press(self, symbol: int, modifiers: int):
+        if symbol in self.keymap:
+            mapped = self.keymap[symbol]
+            self.vm.press(self.keymap[symbol])
+            print(f"Pressed {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
 
-        if symbol == arcade.key.SPACE:
+        elif symbol == arcade.key.SPACE:
             self.paused = not self.paused
 
         if self.paused:
