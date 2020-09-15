@@ -4,7 +4,9 @@ Core VM-related functionality for executing programs
 Timer and VM are implemented here.
 
 """
-from typing import Tuple, List, ByteString, Iterable, Union
+from collections import namedtuple
+from copy import copy
+from typing import Tuple, List, ByteString, Iterable, Union, Dict
 from random import randrange
 
 from eightdad.core.bytecode import (
@@ -69,6 +71,17 @@ def upper_hex(src: Union[int, Iterable[int]]) -> str:
     return "".join((upper_hex(i) for i in src))
 
 
+VMState = namedtuple(
+    'VMState', [
+        'program_counter',
+        'next_instruction',
+        'v_registers',
+        'timers',
+        'stack',
+        'keys'
+    ],
+)
+
 class Chip8VirtualMachine:
 
     def load_to_memory(self, data: ByteString, location: int) -> None:
@@ -127,7 +140,8 @@ class Chip8VirtualMachine:
             memory_size: int = 4096,
             execution_start: int = DEFAULT_EXECUTION_START,
             digit_start: int = 0x0,
-            ticks_per_second: int = 200,
+            ticks_per_frame: int = 20,
+            frames_per_second: int = 30,
             video_ram_type: type = VideoRam
     ):
         """
@@ -138,16 +152,17 @@ class Chip8VirtualMachine:
         track of tiling or other platform-specific display features to
         improve drawing performance.
 
-        Avoiding redraw of unchanged pixels is the major intended usecase
-        for this feature. For example, a curses frontend using braille
-        characters as pixel blocks is one possibility.
+        Avoiding redraw of unchanged pixels is the major intended
+        usecase for this feature. For example, a curses frontend
+        using braille characters as pixel blocks is one possibility.
 
         :param display_size: A pair of values for the screen type.
         :param display_wrap: whether drawing wraps
         :param memory_size: how big RAM should be
         :param execution_start: where to start execution
         :param digit_start: where digits should start in ram
-        :param ticks_per_second: how fast execution happens
+        :param ticks_per_frame: how many instructions execute per frame
+        :param frames_per_second: how many frames/sec execute
         :param video_ram_type: a VideoRam class or subclass
         """
         # initialize display-related functionality
@@ -182,9 +197,11 @@ class Chip8VirtualMachine:
         
         self._delay_timer = Timer()
         self._sound_timer = Timer()
-        
-        self.ticks_per_second = ticks_per_second
-        self.tick_length = 1.0 / ticks_per_second
+
+        self.ticks_per_frame = ticks_per_frame
+        self.frames_per_second = frames_per_second
+        self.ticks_per_second = ticks_per_frame * frames_per_second
+        self.tick_length = 1.0 / self.ticks_per_second
 
         self.instruction_parser = Chip8Instruction()
         self.instruction_unhandled = False
@@ -213,6 +230,31 @@ class Chip8VirtualMachine:
 
     def release(self, key: int) -> None:
         self._keystates[key] = False
+
+    def dump_state(self) -> VMState:
+        """
+        Return a named tuple representing VM state.
+
+        It is the responsibility of the frontend implementation to
+        render this object into a form readable to the user.
+
+        :return: named tuple of registers, keys, and stack
+        """
+        pc = self.program_counter
+        mem = self.memory
+
+        # get the instruction as big endian int, skip struct
+        next_instruction = mem[pc] << 8
+        next_instruction += mem[pc + 1]
+
+        return VMState(
+            pc,
+            next_instruction,
+            copy(self.v_registers),
+            {'delay_timer': self.delay_timer, 'sound_timer': self.sound_timer},
+            copy(self.call_stack),
+            copy(self._keystates)
+        )
 
     def skip_next_instruction(self):
         """
@@ -561,8 +603,7 @@ class Chip8VirtualMachine:
         """
 
         # Advance timers, happens even when waiting for keypress.
-        if not dt:
-            dt += self.tick_length
+        dt = dt or self.tick_length
         
         self._delay_timer.tick(dt)
         self._sound_timer.tick(dt)
@@ -595,4 +636,6 @@ class Chip8VirtualMachine:
         pc = self.program_counter
         return f"{upper_hex(self.memory[pc: pc + 2])}" \
                f" @ 0x{upper_hex(pc)}"
+
+
 

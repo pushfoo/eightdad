@@ -131,7 +131,8 @@ def run_emu(screen: Screen, render_method=render_halfchars) -> None:
             if ev in final_keymap:
                 vm.press(final_keymap[ev])
 
-            vm.tick(1 / 20.0)
+            for i in range(vm.ticks_per_frame):
+                vm.tick()
 
             if ev in final_keymap:
                 vm.release(final_keymap[ev])

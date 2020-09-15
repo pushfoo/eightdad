@@ -9,11 +9,12 @@ import sys
 from pathlib import Path
 
 import arcade
+import pyglet
 from arcade.gl import geometry
 from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
-from eightdad.core.vm import upper_hex
+from eightdad.core.vm import upper_hex, VMState
 from eightdad.frontend.keymap import build_hexkey_mapping
 from eightdad.frontend.util import clean_path, load_rom_to_vm
 
@@ -72,13 +73,15 @@ class Chip8Front(arcade.Window):
         self.update_rate = 1.0 / 30
         self.breakpoints = set()
 
-    def report_state(self) -> None:
-        vm = self.vm
+    def report_state(self, state: VMState) -> None:
+        pc = state.program_counter
+        next_instr = state.next_instruction
         print(
             f"== state ==\n"
-            f"PC       : {vm.dump_current_pc_instruction_raw()}\n"
-            f"stack    : {vm.call_stack}\n"
-            f"registers: {[i for i in vm.v_registers]}"
+            f"PC       : 0x{upper_hex(next_instr)} @ 0x{upper_hex(pc)}\n"
+            f"stack    : {state.stack}\n"
+            f"registers: {state.v_registers}\n"
+            f"keys     : {state.keys}\n"
         )
 
     def set_update_rate(self, rate: float):
@@ -91,32 +94,22 @@ class Chip8Front(arcade.Window):
         super().set_update_rate(rate)
         self.update_rate = rate
 
-    def tick(self, delta_time: float):
-        vm = self.vm
-
-        self.report_state()
-
-        if vm.program_counter in self.breakpoints:
-            if not self.paused:
-                print(f"BREAKPOINT at {upper_hex(vm.program_counter)}")
-                self.paused = True
-                return
-
-        vm.tick(delta_time)
-
-        if self.vm.instruction_unhandled:
-            print(f"unhandled {self.vm.dump_current_pc_instruction_raw()}")
-
-        # screen updated always, for now
-        self.texture.use(0)
-        self.texture.write(self.screen_buffer)
-
     def on_update(self, delta_time: float):
         # only update when executing?
         vm = self.vm
 
         if not self.paused:
-            self.tick(delta_time)
+            for i in range(vm.ticks_per_frame):
+                vm_state = vm.dump_state()
+                self.report_state(vm_state)
+                vm.tick()
+
+                if self.vm.instruction_unhandled:
+                    print(f"INSTRUCTION UNHANDLED!")
+                    self.paused = True
+
+        self.texture.use(0)
+        self.texture.write(self.screen_buffer)
 
     def on_draw(self):
         self.clear()
@@ -128,18 +121,22 @@ class Chip8Front(arcade.Window):
             mapped = self.keymap[symbol]
             self.vm.release(mapped)
             print(f"Released {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
+
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol in self.keymap:
             mapped = self.keymap[symbol]
             self.vm.press(self.keymap[symbol])
             print(f"Pressed {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
 
+        elif symbol == arcade.key.H:
+            pyglet.app.exit()
+
         elif symbol == arcade.key.SPACE:
             self.paused = not self.paused
 
         if self.paused:
             if symbol == arcade.key.ENTER:
-                self.tick(self.update_rate)
+                self.vm.tick()
 
 
 def exit_with_error(msg: str, error_code: int=1) -> None:
@@ -176,7 +173,8 @@ def main() -> None:
         f"EightDAD - {display_filename}",
         vm,
     )
-
+    # 30 FPS
+    front.set_update_rate(1/30)
     arcade.run()
 
 if __name__ == "__main__":
