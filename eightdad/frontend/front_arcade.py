@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 import arcade
+import pyglet
 from arcade.gl import geometry
 from arcade import get_projection
 
@@ -126,6 +127,9 @@ class Chip8Front(arcade.Window):
             mapped = self.keymap[symbol]
             self.vm.press(self.keymap[symbol])
             print(f"Pressed {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
+
+        elif symbol == arcade.key.H:
+            pyglet.app.exit()
 
         elif symbol == arcade.key.SPACE:
             self.paused = not self.paused
