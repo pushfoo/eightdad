@@ -17,3 +17,12 @@ class TestNameAssignment:
         b = Breakpoint(0x200)
         assert b.name == "breakpoint-0x200"
 
+def test_assigning_name_after_creation_raises_exception():
+    b = Breakpoint(0x200)
+    with pytest.raises(AttributeError):
+        b.name = "a"
+
+def test_assigning_address_after_creation_raises_exception():
+    b = Breakpoint(0x200)
+    with pytest.raises(AttributeError):
+        b.address = 0x202
