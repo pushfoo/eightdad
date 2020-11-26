@@ -71,7 +71,6 @@ class Chip8Front(arcade.Window):
         self.quad = geometry.screen_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
         self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
         self.update_rate = 1.0 / 30
-        self.breakpoints = set()
 
     def report_state(self, state: VMState) -> None:
         pc = state.program_counter
