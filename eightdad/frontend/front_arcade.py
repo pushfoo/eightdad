@@ -65,7 +65,7 @@ class Chip8Front(arcade.Window):
         # get a bytestring that can be written to GL texture
         self.screen_buffer = memoryview(self.vm.video_ram.pixels)
 
-        self.program['projection'] = get_projection().flatten()
+        self.program['projection'] = get_projection()
         self.program['screen'] = 0
 
         self.quad = geometry.screen_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
