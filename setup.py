@@ -36,5 +36,5 @@ setup(
         "Topic :: Software Development :: Interpreters",
         "Topic :: System :: Emulators"
     ],
-    python_requires='>=3.6'
+    python_requires='>=3.7'
 )
