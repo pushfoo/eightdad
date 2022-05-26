@@ -6,7 +6,6 @@ library. Original is under MIT license.
 
 """
 import sys
-from pathlib import Path
 
 import arcade
 import pyglet
@@ -14,18 +13,25 @@ from arcade.gl import geometry
 from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
-from eightdad.core.vm import upper_hex, VMState
+from eightdad.core.vm import upper_hex, VMState, report_state
+from eightdad.frontend.frontend_common import exit_with_error, Frontend
 from eightdad.frontend.keymap import build_hexkey_mapping
 from eightdad.frontend.util import clean_path, load_rom_to_vm
 
-SCREEN_WIDTH = 64 * 10
-SCREEN_HEIGHT = 32 * 10
 
+class ArcadeWindow(arcade.Window):
 
-class Chip8Front(arcade.Window):
-
-    def __init__(self, width, height, title, vm, paused: bool = False):
+    def __init__(
+            self,
+            width: int, height: int,
+            title: str,
+            vm: Chip8VirtualMachine,
+            keymap,
+            paused: bool = False
+    ):
         super().__init__(width, height, title)
+
+        self.vm: Chip8VirtualMachine = vm
 
         # from einarf's original
         self.program = self.ctx.program(
@@ -58,9 +64,8 @@ class Chip8Front(arcade.Window):
                     }
                     """
         )
-        self.vm: Chip8VirtualMachine = vm
+        self.keymap = keymap
         self.paused = paused
-        self.keymap = build_hexkey_mapping()
 
         # get a bytestring that can be written to GL texture
         self.screen_buffer = memoryview(self.vm.video_ram.pixels)
@@ -68,21 +73,9 @@ class Chip8Front(arcade.Window):
         self.program['projection'] = get_projection()
         self.program['screen'] = 0
 
-        self.quad = geometry.screen_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.quad = geometry.screen_rectangle(0, 0, self.width, self.height)
         self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
         self.update_rate = 1.0 / 30
-        self.breakpoints = set()
-
-    def report_state(self, state: VMState) -> None:
-        pc = state.program_counter
-        next_instr = state.next_instruction
-        print(
-            f"== state ==\n"
-            f"PC       : 0x{upper_hex(next_instr)} @ 0x{upper_hex(pc)}\n"
-            f"stack    : {state.stack}\n"
-            f"registers: {state.v_registers}\n"
-            f"keys     : {state.keys}\n"
-        )
 
     def set_update_rate(self, rate: float):
         """
@@ -101,7 +94,7 @@ class Chip8Front(arcade.Window):
         if not self.paused:
             for i in range(vm.ticks_per_frame):
                 vm_state = vm.dump_state()
-                self.report_state(vm_state)
+                report_state(vm_state)
                 vm.tick()
 
                 if self.vm.instruction_unhandled:
@@ -139,43 +132,28 @@ class Chip8Front(arcade.Window):
                 self.vm.tick()
 
 
-def exit_with_error(msg: str, error_code: int=1) -> None:
-    """
-    Display an error message and exit loudly with error code
+class ArcadeFrontend(Frontend):
+    def __init__(self, pixel_size: int = 10):
+        super().__init__()
+        display = self._vm.video_ram
 
-    :param msg: message to display
-    :param error_code: return error code to give to the shell
-    :return:
-    """
-    print(f"ERROR: {msg}", file=sys.stderr)
-    exit(error_code)
+        display_width_px = display.width * pixel_size
+        display_height_px = display.height * pixel_size
 
+        self._window = ArcadeWindow(
+            display_width_px, display_height_px,
+            f"EightDAD - {self._display_filename}",
+            self._vm,
+            self._key_mapping
+        )
+
+    def run(self):
+        self._window.run()
+        arcade.run()
 
 def main() -> None:
-    """
-    Hacky launch function that stubs VM init and launch.
-
-    Most of this should probably go into a frontend baseclass.
-
-    :return:
-    """
-    path = clean_path(sys.argv[1])
-    try:
-        vm = load_rom_to_vm(path)
-    except IOError as e:
-        exit_with_error(f"Could not read {path!r} : {e!r}")
-    except IndexError as e:
-        exit_with_error(f"Could not load rom: {e!r}")
-
-    display_filename = path.stem + ''.join(path.suffixes)
-    front = Chip8Front(
-        SCREEN_WIDTH, SCREEN_HEIGHT,
-        f"EightDAD - {display_filename}",
-        vm,
-    )
-    # 30 FPS
-    front.set_update_rate(1/30)
-    arcade.run()
+    frontend = ArcadeFrontend()
+    frontend.run()
 
 if __name__ == "__main__":
     main()
