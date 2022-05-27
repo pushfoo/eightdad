@@ -100,7 +100,8 @@ class AsciimaticsFrontend(Frontend):
         super().__init__()
         self.screen = screen
         self.render_method = render_method
-        self._paused = False
+        self._paused = self.launch_args['start_paused']
+
 
     @property
     def paused(self) -> bool:

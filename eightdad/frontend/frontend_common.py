@@ -1,9 +1,33 @@
 import sys
+import argparse
 from abc import ABC, abstractmethod
+from typing import Union
+
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.frontend.keymap import build_hexkey_mapping
 from eightdad.frontend.util import clean_path, load_rom_to_vm
+
+
+# set up the common arg parser to use
+BASE_ARG_PARSER = argparse.ArgumentParser(
+    description='EightDAD Chip-8 Emulator')
+BASE_ARG_PARSER.add_argument(
+    '-r', '--rom-file', type=str, required=True, help="Which ROM file to run")
+BASE_ARG_PARSER.add_argument(
+    '-P', '--start-paused', help="Start the VM paused", action='store_true')
+BASE_ARG_PARSER.set_defaults(start_paused=False)
+
+
+def build_window_title(paused: bool, current_file) -> str:
+    """
+    Returns a neatly formatted window title.
+
+    :param bool paused: whether the VM is currently paused
+    :param current_file: the name of the file to display
+    :return str: a neatly formatted window title
+    """
+    return f"EightDAD {'(PAUSED)' if paused else '-'} {current_file}"
 
 
 def exit_with_error(msg: str, error_code: int = 1) -> None:
@@ -24,9 +48,13 @@ class Frontend(ABC):
 
     Inherit from it to set up your own frontends.
     """
-    def __init__(self):
+
+    def __init__(self, arg_parser=BASE_ARG_PARSER):
+
+        self.launch_args = vars(arg_parser.parse_args())
+
         self._rom_path = None
-        self._vm: Chip8VirtualMachine = None
+        self._vm: Union[Chip8VirtualMachine, None] = None
         self._shown_filename = None
         self.load_vm()
 
@@ -68,7 +96,7 @@ class Frontend(ABC):
         self._shown_filename = path.stem + ''.join(path.suffixes)
 
     def load_vm(self) -> Chip8VirtualMachine:
-        self.rom_path = clean_path(sys.argv[1])
+        self.rom_path = clean_path(self.launch_args['rom_file'])
 
         try:
             self._vm = load_rom_to_vm(self.rom_path)
