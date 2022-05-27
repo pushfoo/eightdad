@@ -18,9 +18,7 @@ Implemented so far:
 from asciimatics.screen import Screen
 from eightdad.core import Chip8VirtualMachine
 from eightdad.frontend.frontend_common import Frontend
-from eightdad.frontend.keymap import build_hexkey_mapping
-from eightdad.frontend.util import (
-    load_rom_to_vm, exit_with_error, screen_coordinates, clean_path)
+from eightdad.frontend.util import screen_coordinates
 
 
 # unicode escape codes for full block and half block characters. the
@@ -80,7 +78,7 @@ def render_halfchars(
 ) -> None:
     """
     Render the screen with half-height block characters.
-    
+
     :param screen: which screen to draw to
     :param vm: a chip 8 VM to render the screen of
     :param x_start: where to start drawing the display area

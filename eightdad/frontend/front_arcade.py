@@ -5,18 +5,14 @@ A modified version of einarf's Chip-8 display example in the arcade
 library. Original is under MIT license.
 
 """
-import sys
-
 import arcade
 import pyglet
 from arcade.gl import geometry
 from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
-from eightdad.core.vm import upper_hex, VMState, report_state
-from eightdad.frontend.frontend_common import exit_with_error, Frontend
-from eightdad.frontend.keymap import build_hexkey_mapping
-from eightdad.frontend.util import clean_path, load_rom_to_vm
+from eightdad.core.vm import upper_hex, report_state
+from eightdad.frontend.frontend_common import Frontend
 
 
 class ArcadeWindow(arcade.Window):
@@ -98,7 +94,7 @@ class ArcadeWindow(arcade.Window):
                 vm.tick()
 
                 if self.vm.instruction_unhandled:
-                    print(f"INSTRUCTION UNHANDLED!")
+                    print("INSTRUCTION UNHANDLED!")
                     self.paused = True
 
         self.texture.use(0)
@@ -113,13 +109,19 @@ class ArcadeWindow(arcade.Window):
         if symbol in self.keymap:
             mapped = self.keymap[symbol]
             self.vm.release(mapped)
-            print(f"Released {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
+            print(
+                f"Released {chr(symbol)!r}, maps to chip8 key"
+                f"{upper_hex(mapped)}"
+            )
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol in self.keymap:
             mapped = self.keymap[symbol]
             self.vm.press(self.keymap[symbol])
-            print(f"Pressed {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
+            print(
+                f"Pressed {chr(symbol)!r}, maps to chip8 key"
+                f" {upper_hex(mapped)}"
+            )
 
         elif symbol == arcade.key.H:
             pyglet.app.exit()
@@ -163,6 +165,6 @@ def main() -> None:
     frontend = ArcadeFrontend()
     frontend.run()
 
+
 if __name__ == "__main__":
     main()
-
