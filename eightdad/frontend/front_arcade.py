@@ -12,7 +12,7 @@ from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.vm import upper_hex, report_state
-from eightdad.frontend.frontend_common import Frontend
+from eightdad.frontend.frontend_common import Frontend, build_window_title
 
 
 class ArcadeWindow(arcade.Window):
@@ -20,12 +20,17 @@ class ArcadeWindow(arcade.Window):
     def __init__(
             self,
             width: int, height: int,
-            title: str,
             vm: Chip8VirtualMachine,
+            current_file: str,
             keymap,
             paused: bool = False
     ):
-        super().__init__(width, height, title)
+        super().__init__(
+            width, height,
+            build_window_title(paused, current_file)
+        )
+        self._paused = paused
+        self._current_file = current_file
 
         self.vm: Chip8VirtualMachine = vm
 
@@ -61,7 +66,6 @@ class ArcadeWindow(arcade.Window):
                     """
         )
         self.keymap = keymap
-        self.paused = paused
 
         # get a bytestring that can be written to GL texture
         self.screen_buffer = memoryview(self.vm.video_ram.pixels)
@@ -72,6 +76,15 @@ class ArcadeWindow(arcade.Window):
         self.quad = geometry.screen_rectangle(0, 0, self.width, self.height)
         self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
         self.update_rate = 1.0 / 30
+
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    @paused.setter
+    def paused(self, paused: bool):
+        self._paused = paused
+        self.set_caption(build_window_title(paused, self._current_file))
 
     def set_update_rate(self, rate: float):
         """
@@ -143,9 +156,10 @@ class ArcadeFrontend(Frontend):
 
         self._window = ArcadeWindow(
             display_width_px, display_height_px,
-            f"EightDAD - {self._shown_filename}",
             self._vm,
-            self._key_mapping
+            self.launch_args['rom_file'],
+            self._key_mapping,
+            self.launch_args['start_paused']
         )
 
     def run(self):
@@ -154,6 +168,13 @@ class ArcadeFrontend(Frontend):
 
     @property
     def paused(self) -> bool:
+        """
+        Return whether the VM is currently paused.
+
+        Stored on the window to make update logic simpler.
+
+        :return: whether the VM is paused.
+        """
         return self._window.paused
 
     @paused.setter
