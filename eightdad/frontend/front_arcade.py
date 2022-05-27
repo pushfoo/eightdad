@@ -5,27 +5,34 @@ A modified version of einarf's Chip-8 display example in the arcade
 library. Original is under MIT license.
 
 """
-import sys
-from pathlib import Path
-
 import arcade
 import pyglet
 from arcade.gl import geometry
 from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
-from eightdad.core.vm import upper_hex, VMState
-from eightdad.frontend.keymap import build_hexkey_mapping
-from eightdad.frontend.util import clean_path, load_rom_to_vm
-
-SCREEN_WIDTH = 64 * 10
-SCREEN_HEIGHT = 32 * 10
+from eightdad.core.vm import upper_hex, report_state
+from eightdad.frontend.frontend_common import Frontend, build_window_title
 
 
-class Chip8Front(arcade.Window):
+class ArcadeWindow(arcade.Window):
 
-    def __init__(self, width, height, title, vm, paused: bool = False):
-        super().__init__(width, height, title)
+    def __init__(
+            self,
+            width: int, height: int,
+            vm: Chip8VirtualMachine,
+            current_file: str,
+            keymap,
+            paused: bool = False
+    ):
+        super().__init__(
+            width, height,
+            build_window_title(paused, current_file)
+        )
+        self._paused = paused
+        self._current_file = current_file
+
+        self.vm: Chip8VirtualMachine = vm
 
         # from einarf's original
         self.program = self.ctx.program(
@@ -58,9 +65,7 @@ class Chip8Front(arcade.Window):
                     }
                     """
         )
-        self.vm: Chip8VirtualMachine = vm
-        self.paused = paused
-        self.keymap = build_hexkey_mapping()
+        self.keymap = keymap
 
         # get a bytestring that can be written to GL texture
         self.screen_buffer = memoryview(self.vm.video_ram.pixels)
@@ -68,21 +73,18 @@ class Chip8Front(arcade.Window):
         self.program['projection'] = get_projection()
         self.program['screen'] = 0
 
-        self.quad = geometry.screen_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.quad = geometry.screen_rectangle(0, 0, self.width, self.height)
         self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
         self.update_rate = 1.0 / 30
-        self.breakpoints = set()
 
-    def report_state(self, state: VMState) -> None:
-        pc = state.program_counter
-        next_instr = state.next_instruction
-        print(
-            f"== state ==\n"
-            f"PC       : 0x{upper_hex(next_instr)} @ 0x{upper_hex(pc)}\n"
-            f"stack    : {state.stack}\n"
-            f"registers: {state.v_registers}\n"
-            f"keys     : {state.keys}\n"
-        )
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    @paused.setter
+    def paused(self, paused: bool):
+        self._paused = paused
+        self.set_caption(build_window_title(paused, self._current_file))
 
     def set_update_rate(self, rate: float):
         """
@@ -101,11 +103,11 @@ class Chip8Front(arcade.Window):
         if not self.paused:
             for i in range(vm.ticks_per_frame):
                 vm_state = vm.dump_state()
-                self.report_state(vm_state)
+                report_state(vm_state)
                 vm.tick()
 
                 if self.vm.instruction_unhandled:
-                    print(f"INSTRUCTION UNHANDLED!")
+                    print("INSTRUCTION UNHANDLED!")
                     self.paused = True
 
         self.texture.use(0)
@@ -120,13 +122,19 @@ class Chip8Front(arcade.Window):
         if symbol in self.keymap:
             mapped = self.keymap[symbol]
             self.vm.release(mapped)
-            print(f"Released {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
+            print(
+                f"Released {chr(symbol)!r}, maps to chip8 key"
+                f"{upper_hex(mapped)}"
+            )
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol in self.keymap:
             mapped = self.keymap[symbol]
             self.vm.press(self.keymap[symbol])
-            print(f"Pressed {chr(symbol)!r}, maps to chip8 key {upper_hex(mapped)}")
+            print(
+                f"Pressed {chr(symbol)!r}, maps to chip8 key"
+                f" {upper_hex(mapped)}"
+            )
 
         elif symbol == arcade.key.H:
             pyglet.app.exit()
@@ -139,44 +147,45 @@ class Chip8Front(arcade.Window):
                 self.vm.tick()
 
 
-def exit_with_error(msg: str, error_code: int=1) -> None:
-    """
-    Display an error message and exit loudly with error code
+class ArcadeFrontend(Frontend):
+    def __init__(self, pixel_size: int = 10):
+        super().__init__()
 
-    :param msg: message to display
-    :param error_code: return error code to give to the shell
-    :return:
-    """
-    print(f"ERROR: {msg}", file=sys.stderr)
-    exit(error_code)
+        display_width_px = self._vm_display.width * pixel_size
+        display_height_px = self._vm_display.height * pixel_size
+
+        self._window = ArcadeWindow(
+            display_width_px, display_height_px,
+            self._vm,
+            self.launch_args['rom_file'],
+            self._key_mapping,
+            self.launch_args['start_paused']
+        )
+
+    def run(self):
+        self._window.run()
+        arcade.run()
+
+    @property
+    def paused(self) -> bool:
+        """
+        Return whether the VM is currently paused.
+
+        Stored on the window to make update logic simpler.
+
+        :return: whether the VM is paused.
+        """
+        return self._window.paused
+
+    @paused.setter
+    def paused(self, pause: bool):
+        self._window.paused = pause
 
 
 def main() -> None:
-    """
-    Hacky launch function that stubs VM init and launch.
+    frontend = ArcadeFrontend()
+    frontend.run()
 
-    Most of this should probably go into a frontend baseclass.
-
-    :return:
-    """
-    path = clean_path(sys.argv[1])
-    try:
-        vm = load_rom_to_vm(path)
-    except IOError as e:
-        exit_with_error(f"Could not read {path!r} : {e!r}")
-    except IndexError as e:
-        exit_with_error(f"Could not load rom: {e!r}")
-
-    display_filename = path.stem + ''.join(path.suffixes)
-    front = Chip8Front(
-        SCREEN_WIDTH, SCREEN_HEIGHT,
-        f"EightDAD - {display_filename}",
-        vm,
-    )
-    # 30 FPS
-    front.set_update_rate(1/30)
-    arcade.run()
 
 if __name__ == "__main__":
     main()
-

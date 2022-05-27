@@ -82,6 +82,19 @@ VMState = namedtuple(
     ],
 )
 
+
+def report_state(state: VMState):
+    pc = state.program_counter
+    next_instr = state.next_instruction
+    print(
+        f"== state ==\n"
+        f"PC       : 0x{upper_hex(next_instr)} @ 0x{upper_hex(pc)}\n"
+        f"stack    : {state.stack}\n"
+        f"registers: {state.v_registers}\n"
+        f"keys     : {state.keys}\n"
+    )
+
+
 class Chip8VirtualMachine:
 
     def load_to_memory(self, data: ByteString, location: int) -> None:
