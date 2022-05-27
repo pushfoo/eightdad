@@ -135,14 +135,13 @@ class ArcadeWindow(arcade.Window):
 class ArcadeFrontend(Frontend):
     def __init__(self, pixel_size: int = 10):
         super().__init__()
-        display = self._vm.video_ram
 
-        display_width_px = display.width * pixel_size
-        display_height_px = display.height * pixel_size
+        display_width_px = self._vm_display.width * pixel_size
+        display_height_px = self._vm_display.height * pixel_size
 
         self._window = ArcadeWindow(
             display_width_px, display_height_px,
-            f"EightDAD - {self._display_filename}",
+            f"EightDAD - {self._shown_filename}",
             self._vm,
             self._key_mapping
         )
@@ -150,6 +149,15 @@ class ArcadeFrontend(Frontend):
     def run(self):
         self._window.run()
         arcade.run()
+
+    @property
+    def paused(self) -> bool:
+        return self._window.paused
+
+    @paused.setter
+    def paused(self, pause: bool):
+        self._window.paused = pause
+
 
 def main() -> None:
     frontend = ArcadeFrontend()

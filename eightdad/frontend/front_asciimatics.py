@@ -14,13 +14,14 @@ Implemented so far:
     [ ] optimizations for only drawing changed pixels
 
 """
-import sys
 
 from asciimatics.screen import Screen
-from eightdad.core import Chip8VirtualMachine as VM
+from eightdad.core import Chip8VirtualMachine
+from eightdad.frontend.frontend_common import Frontend
 from eightdad.frontend.keymap import build_hexkey_mapping
 from eightdad.frontend.util import (
     load_rom_to_vm, exit_with_error, screen_coordinates, clean_path)
+
 
 # unicode escape codes for full block and half block characters. the
 # half-block characters allow a console to emulate square pixels by
@@ -30,6 +31,7 @@ FULL = "\u2588"
 HALF_TOP = "\u2580"
 HALF_LOW = "\u2584"
 
+
 DEFAULT_COLORS = (
     Screen.COLOUR_BLACK,
     Screen.COLOUR_WHITE
@@ -38,7 +40,7 @@ DEFAULT_COLORS = (
 
 def render_fullchars(
         screen: Screen,
-        vm: VM,
+        vm: Chip8VirtualMachine,
         x_start: int = 0, y_start: int = 1,
         colours=DEFAULT_COLORS,
         block_char: str = FULL) -> None:
@@ -54,7 +56,7 @@ def render_fullchars(
     something like '#' and the display should still work.
 
     :param screen: asciimatics screen to draw to
-    :param vm: the Chip 8 VM to source vram from
+    :param vm: the Chip 8 Chip8VirtualMachine to source vram from
     :param x_start: where to start drawing the display area
     :param y_start: where to to start drawing the display area
     :param colours: a list of asciimatics colors to draw in
@@ -72,7 +74,7 @@ def render_fullchars(
 
 def render_halfchars(
         screen: Screen,
-        vm: VM,
+        vm: Chip8VirtualMachine,
         x_start: int = 0, y_start: int = 1,
         colours=DEFAULT_COLORS
 ) -> None:
@@ -82,7 +84,7 @@ def render_halfchars(
     :param screen: which screen to draw to
     :param vm: a chip 8 VM to render the screen of
     :param x_start: where to start drawing the display area
-    :param y_start: where to to start drawing the display area
+    :param y_start: where  to start drawing the display area
     :param colours: a list of asciimatics colors to draw with.
     """
     vram = vm.video_ram
@@ -95,50 +97,56 @@ def render_halfchars(
         )
 
 
-def run_emu(screen: Screen, render_method=render_halfchars) -> None:
-    """
-    Asciimatics runner function to wrap, render the screen
+class AsciimaticsFrontend(Frontend):
+    def __init__(self, screen: Screen, render_method=render_halfchars):
+        super().__init__()
+        self.screen = screen
+        self.render_method = render_method
+        self._paused = False
 
-    """
-    path = clean_path(sys.argv[1])
-    try:
-        vm = load_rom_to_vm(path)
-    except IOError as e:
-        exit_with_error(f"Could not read {path!r} : {e!r}")
-    except IndexError as e:
-        exit_with_error(f"Rom size appears incorrect: {e!r}")
+    @property
+    def paused(self) -> bool:
+        return self._paused
 
-    paused = False
+    @paused.setter
+    def paused(self, pause: bool):
+        self._paused = pause
 
-    # load keymap in an ugly but functional way
-    # later versions of this should be a function that
-    # takes a converter function to map between keys and
-    # their frontend-specific representation. this will
-    # make loading generic while still retaining compatibility
-    # with various frontends.
-    final_keymap = build_hexkey_mapping()
+    def run(self) -> None:
+        """
+        Asciimatics helper function to drive the emulator.
+        """
 
-    while True:
+        while True:
+            ev = self.screen.get_key()
+            if ev in (ord('H'), ord('h')):
+                return
 
-        ev = screen.get_key()
-        if ev in (ord('H'), ord('h')):
-            return
+            if ev == ord('p'):
+                self.paused = not self.paused
 
-        if ev == ord('p'):
-            paused = not paused
+            if not self.paused:
+                if ev in self.key_mapping:
+                    self._vm.press(self.key_mapping[ev])
 
-        if not paused:
-            if ev in final_keymap:
-                vm.press(final_keymap[ev])
+                for i in range(self._vm.ticks_per_frame):
+                    self._vm.tick()
 
-            for i in range(vm.ticks_per_frame):
-                vm.tick()
+                if ev in self.key_mapping:
+                    self._vm.release(self.key_mapping[ev])
 
-            if ev in final_keymap:
-                vm.release(final_keymap[ev])
+            self.render_method(self.screen, self._vm)
+            self.screen.refresh()
 
-        render_method(screen, vm)
-        screen.refresh()
+    @classmethod
+    def asciimatics_helper(cls, screen: Screen):
+        front = cls(screen)
+        front.run()
 
 
-Screen.wrapper(run_emu)
+def main() -> None:
+    Screen.wrapper(AsciimaticsFrontend.asciimatics_helper)
+
+
+if __name__ == "__main__":
+    main()

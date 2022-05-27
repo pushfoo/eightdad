@@ -26,9 +26,12 @@ class Frontend(ABC):
         Inherit from it to set up your own frontends.
         """
         def __init__(self):
-            self.rom_path = None
-            self._vm: Chip8VirtualMachine = self.load_vm()
-            self._display_filename = None
+            self._rom_path = None
+            self._vm: Chip8VirtualMachine = None
+            self._shown_filename = None
+            self.load_vm()
+
+            self._vm_display = self._vm.video_ram
 
             self.breakpoints = None
             self._tick_rate = 1.0 / 30
@@ -36,17 +39,49 @@ class Frontend(ABC):
 
             self.load_vm()
 
+        @property
+        @abstractmethod
+        def paused(self) -> bool:
+            raise NotImplementedError()
+
+        @paused.setter
+        @abstractmethod
+        def paused(self, pause: bool):
+
+            raise NotImplementedError()
+
+        @property
+        def key_mapping(self):
+            return self._key_mapping
+
+        @property
+        def rom_path(self):
+            return self._rom_path
+
+        @property
+        def rom_path(self):
+            return self._rom_path
+
+        @property
+        def shown_filename(self) -> str:
+            return self._shown_filename
+
+        @rom_path.setter
+        def rom_path(self, rom_path):
+            path = clean_path(rom_path)
+            self._rom_path = path
+            self._shown_filename = path.stem + ''.join(path.suffixes)
+
         def load_vm(self) -> Chip8VirtualMachine:
-            path = clean_path(sys.argv[1])
+            self.rom_path = clean_path(sys.argv[1])
 
             try:
-                self._vm = load_rom_to_vm(path)
+                self._vm = load_rom_to_vm(self.rom_path)
             except IOError as e:
-                exit_with_error(f"Could not read file {path!r} : {e!r}")
+                exit_with_error(f"Could not read file {self.rom_path!r} : {e!r}")
             except IndexError as e:
                 exit_with_error(f"Could not load rom: {e!r}")
 
-            self._display_filename = path.stem + ''.join(path.suffixes)
             self.breakpoints = set()
 
         @abstractmethod
