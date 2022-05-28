@@ -1,10 +1,9 @@
 import sys
 import argparse
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Union, Set
 
-
-from eightdad.core import Chip8VirtualMachine
+from eightdad.core import Chip8VirtualMachine, VideoRam
 from eightdad.frontend.keymap import build_hexkey_mapping
 from eightdad.frontend.util import clean_path, load_rom_to_vm
 
@@ -54,17 +53,16 @@ class Frontend(ABC):
         self.launch_args = vars(arg_parser.parse_args())
 
         self._rom_path = None
-        self._vm: Union[Chip8VirtualMachine, None] = None
         self._shown_filename = None
-        self.load_vm()
 
-        self._vm_display = self._vm.video_ram
+        self._vm: Union[Chip8VirtualMachine, None] = None
+        self._vm_display: Union[VideoRam, None] = None
+        self.breakpoints: Union[Set, None] = None
 
-        self.breakpoints = None
+        self.load_vm(self.launch_args['rom_file'])
+
         self._tick_rate = 1.0 / 30
         self._key_mapping = build_hexkey_mapping()
-
-        self.load_vm()
 
     @property
     @abstractmethod
@@ -95,8 +93,15 @@ class Frontend(ABC):
         self._rom_path = path
         self._shown_filename = path.stem + ''.join(path.suffixes)
 
-    def load_vm(self) -> Chip8VirtualMachine:
-        self.rom_path = clean_path(self.launch_args['rom_file'])
+    def load_vm(self, raw_path: str) -> None:
+
+        """
+        Load a ROM to the VM.
+
+        :param raw_path: the file path to attempt to load
+        :return:
+        """
+        self.rom_path = clean_path(raw_path)
 
         try:
             self._vm = load_rom_to_vm(self.rom_path)
@@ -105,10 +110,11 @@ class Frontend(ABC):
         except IndexError as e:
             exit_with_error(f"Could not load rom: {e!r}")
 
+        self._vm_display = self._vm.video_ram
         self.breakpoints = set()
 
     @abstractmethod
-    def run(self):
+    def run(self) -> None:
         raise NotImplementedError()
 
     @property
