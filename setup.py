@@ -1,6 +1,9 @@
 from setuptools import setup, find_packages
 
-install_requires=['bitarray','arcade==2.6.13']
+install_requires=[
+    'bitarray==2.4.1',
+    'arcade==2.6.13'
+]
 
 tests_require = [
     'pytest',
