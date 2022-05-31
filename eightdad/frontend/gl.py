@@ -12,7 +12,7 @@ from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.vm import upper_hex, report_state
-from eightdad.frontend.frontend_common import Frontend, build_window_title
+from eightdad.frontend import build_window_title, Frontend
 
 
 class ArcadeWindow(arcade.Window):
@@ -148,6 +148,7 @@ class ArcadeWindow(arcade.Window):
 
 
 class ArcadeFrontend(Frontend):
+
     def __init__(self, pixel_size: int = 10):
         super().__init__()
 
@@ -157,7 +158,7 @@ class ArcadeFrontend(Frontend):
         self._window = ArcadeWindow(
             display_width_px, display_height_px,
             self._vm,
-            self.launch_args['rom_file'],
+            self.rom_path,
             self._key_mapping,
             self.launch_args['start_paused']
         )

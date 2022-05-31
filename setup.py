@@ -19,7 +19,8 @@ setup(
     packages=find_packages(),
     entry_points={
         "console_scripts": [
-            'eightdad=eightdad.frontend.arcade_front:main'
+            'eightdad=eightdad.frontend.gl:main',
+            'eightdad-tui=eightdad.frontend.tui:main'
         ]
     },
     install_requires=install_requires,

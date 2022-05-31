@@ -7,18 +7,6 @@ from typing import Union, Iterator, Tuple
 PathOrStr = Union[Path, str]
 
 
-def exit_with_error(msg: str, error_code: int=1) -> None:
-    """
-    Display an error message and exit loudly with error code
-
-    :param msg: message to display
-    :param error_code: return error code to give to the shell
-    :return:
-    """
-    print(f"ERROR: {msg}", file=sys.stderr)
-    exit(error_code)
-
-
 def screen_coordinates(
         vm: VM,
         x_step: int = 1,

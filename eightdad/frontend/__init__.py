@@ -1,22 +1,20 @@
-import sys
 import argparse
+import sys
 from abc import ABC, abstractmethod
 from typing import Union, Set
 
 from eightdad.core import Chip8VirtualMachine, VideoRam
-from eightdad.frontend.keymap import build_hexkey_mapping
-from eightdad.frontend.util import clean_path, load_rom_to_vm
+from eightdad.frontend.common.keymap import build_hexkey_mapping
+from eightdad.frontend.common.util import clean_path, load_rom_to_vm
 
-
-# set up the common arg parser to use
 BASE_ARG_PARSER = argparse.ArgumentParser(
     description='EightDAD Chip-8 Emulator')
+# set up the common arg parser to use
 BASE_ARG_PARSER.add_argument(
     '-r', '--rom-file', type=str, required=True, help="Which ROM file to run")
 BASE_ARG_PARSER.add_argument(
     '-P', '--start-paused', help="Start the VM paused", action='store_true')
 BASE_ARG_PARSER.set_defaults(start_paused=False)
-
 
 def build_window_title(paused: bool, current_file) -> str:
     """
@@ -58,7 +56,6 @@ class Frontend(ABC):
         self._vm: Union[Chip8VirtualMachine, None] = None
         self._vm_display: Union[VideoRam, None] = None
         self.breakpoints: Union[Set, None] = None
-
         self.load_vm(self.launch_args['rom_file'])
 
         self._tick_rate = 1.0 / 30
@@ -72,7 +69,6 @@ class Frontend(ABC):
     @paused.setter
     @abstractmethod
     def paused(self, pause: bool):
-
         raise NotImplementedError()
 
     @property
@@ -94,7 +90,6 @@ class Frontend(ABC):
         self._shown_filename = path.stem + ''.join(path.suffixes)
 
     def load_vm(self, raw_path: str) -> None:
-
         """
         Load a ROM to the VM.
 
@@ -124,6 +119,3 @@ class Frontend(ABC):
     @tick_rate.setter
     def tick_rate(self, new_rate):
         self._tick_rate = new_rate
-
-
-FRONTENDS = {}
