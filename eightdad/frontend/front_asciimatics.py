@@ -17,7 +17,7 @@ Implemented so far:
 
 from asciimatics.screen import Screen
 from eightdad.core import Chip8VirtualMachine
-from eightdad.frontend.frontend_common import Frontend
+from eightdad.frontend.common import Frontend
 from eightdad.frontend.util import screen_coordinates
 
 
