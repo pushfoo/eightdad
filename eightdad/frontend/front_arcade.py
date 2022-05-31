@@ -111,7 +111,7 @@ class ArcadeWindow(arcade.Window):
                     self.paused = True
 
         self.texture.use(0)
-        self.texture.write(self.screen_buffer)
+        self.texture.write(self.screen_buffer)  # type: ignore
 
     def on_draw(self):
         self.clear()
