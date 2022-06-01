@@ -17,8 +17,8 @@ Implemented so far:
 
 from asciimatics.screen import Screen
 from eightdad.core import Chip8VirtualMachine
-from eightdad.frontend.common import Frontend
-from eightdad.frontend.util import screen_coordinates
+from eightdad.frontend import Frontend
+from eightdad.frontend.common.util import screen_coordinates
 
 
 # unicode escape codes for full block and half block characters. the

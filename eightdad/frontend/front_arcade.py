@@ -12,7 +12,7 @@ from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.vm import upper_hex, report_state
-from eightdad.frontend.common import Frontend, build_window_title
+from eightdad.frontend import build_window_title, Frontend
 
 
 class ArcadeWindow(arcade.Window):
