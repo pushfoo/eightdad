@@ -58,7 +58,6 @@ class Frontend(ABC):
         self._vm: Union[Chip8VirtualMachine, None] = None
         self._vm_display: Union[VideoRam, None] = None
         self.breakpoints: Union[Set, None] = None
-
         self.load_vm(self.launch_args['rom_file'])
 
         self._tick_rate = 1.0 / 30
@@ -72,7 +71,6 @@ class Frontend(ABC):
     @paused.setter
     @abstractmethod
     def paused(self, pause: bool):
-
         raise NotImplementedError()
 
     @property
@@ -94,7 +92,6 @@ class Frontend(ABC):
         self._shown_filename = path.stem + ''.join(path.suffixes)
 
     def load_vm(self, raw_path: str) -> None:
-
         """
         Load a ROM to the VM.
 

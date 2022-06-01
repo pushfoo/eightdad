@@ -158,7 +158,7 @@ class ArcadeFrontend(Frontend):
         self._window = ArcadeWindow(
             display_width_px, display_height_px,
             self._vm,
-            self.launch_args['rom_file'],
+            self.rom_path,
             self._key_mapping,
             self.launch_args['start_paused']
         )

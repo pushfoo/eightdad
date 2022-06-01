@@ -96,12 +96,12 @@ def render_halfchars(
 
 
 class AsciimaticsFrontend(Frontend):
-    def __init__(self, screen: Screen, render_method=render_halfchars):
+
+    def __init__(self, render_method=render_halfchars):
         super().__init__()
-        self.screen = screen
+        self.screen = None
         self.render_method = render_method
         self._paused = self.launch_args['start_paused']
-
 
     @property
     def paused(self) -> bool:
@@ -111,13 +111,14 @@ class AsciimaticsFrontend(Frontend):
     def paused(self, pause: bool):
         self._paused = pause
 
-    def run(self) -> None:
+    def run(self, screen: Screen = None) -> None:
         """
         Asciimatics helper function to drive the emulator.
         """
+        screen = screen or self.screen
 
         while True:
-            ev = self.screen.get_key()
+            ev = screen.get_key()
             if ev in (ord('H'), ord('h')):
                 return
 
@@ -134,17 +135,14 @@ class AsciimaticsFrontend(Frontend):
                 if ev in self.key_mapping:
                     self._vm.release(self.key_mapping[ev])
 
-            self.render_method(self.screen, self._vm)
-            self.screen.refresh()
-
-    @classmethod
-    def asciimatics_helper(cls, screen: Screen):
-        front = cls(screen)
-        front.run()
+            self.render_method(screen, self._vm)
+            screen.refresh()
 
 
 def main() -> None:
-    Screen.wrapper(AsciimaticsFrontend.asciimatics_helper)
+    # keeping these separate prevents Screen from swallowing argparse errors
+    front = AsciimaticsFrontend()
+    Screen.wrapper(front.run)
 
 
 if __name__ == "__main__":
