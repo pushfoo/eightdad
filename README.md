@@ -5,7 +5,8 @@
 ### What
 For now, it's only a [Chip-8 Virtual Machine](https://en.wikipedia.org/wiki/CHIP-8) in python.
 
-The name comes from the tools I hope to add: 
+The name comes from the tools I hope to add:
+
 [x] **Eight**, as in Chip-8 VM
 [ ] **D**ebugger
 [ ] **A**ssembler
