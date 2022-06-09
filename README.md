@@ -20,7 +20,7 @@ are not currently supported, but may be added one day.
 
 #### Installing
 
-For the moment, this project requires OpenGL 3.3+. To install, do the following:
+For the moment, this project requires OpenGL 3.3+ because it uses [arcade](https://github.com/pythonarcade/arcade) for its main frontend. To install, do the following:
 
 1. Clone this repo locally
 2. [Make a new virtualenv and activate it](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
@@ -51,4 +51,4 @@ developer.
  
 #### But [Octo](https://github.com/JohnEarnest/Octo) already exists!
 
-I know. I like it, and I've contributed to it and its C implementation. Writing my own tools will help me more with the goals above.
+I know. I like it, and I've contributed to both Octo and its more resource-effiicent C implementation, [c-octo](https://github.com/JohnEarnest/c-octo). Writing my own tools will help me more with the goals above.
