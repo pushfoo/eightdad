@@ -111,7 +111,7 @@ class VideoRam:
 
         old_value = pixels[pixel_index]
         pixels[pixel_index] = old_value ^ value
-        return old_value & value
+        return bool(old_value & value)
 
     def clear_screen(self):
         """
