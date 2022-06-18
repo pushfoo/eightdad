@@ -14,6 +14,7 @@ Implemented so far:
     [ ] optimizations for only drawing changed pixels
 
 """
+from typing import Tuple
 
 from asciimatics.screen import Screen
 from eightdad.core import Chip8VirtualMachine
@@ -28,6 +29,17 @@ from eightdad.frontend.common.util import screen_coordinates
 FULL = "\u2588"
 HALF_TOP = "\u2580"
 HALF_LOW = "\u2584"
+
+
+# Default characters for displaying squarish pixels using half-height
+# characters. Implemented as a tuple with arithmetic selection to
+# reduce dependencies and avoid mutable default args.
+HALF_CHAR_TABLE = (
+    ' ',
+    HALF_TOP,
+    HALF_LOW,
+    FULL
+)
 
 
 DEFAULT_COLORS = (
@@ -74,7 +86,8 @@ def render_halfchars(
         screen: Screen,
         vm: Chip8VirtualMachine,
         x_start: int = 0, y_start: int = 1,
-        colours=DEFAULT_COLORS
+        colours=DEFAULT_COLORS,
+        char_table: Tuple[str] = HALF_CHAR_TABLE,
 ) -> None:
     """
     Render the screen with half-height block characters.
@@ -84,14 +97,24 @@ def render_halfchars(
     :param x_start: where to start drawing the display area
     :param y_start: where  to start drawing the display area
     :param colours: a list of asciimatics colors to draw with.
+    :param char_table:
     """
     vram = vm.video_ram
     for x, y in screen_coordinates(vm, y_step=2):
+        char_selection = 0
+
+        # Use the current pixel and the one below it to choose the
+        # character for the current tile
+        if vram[x, y]:
+            char_selection += 1
+        if vram[x, y + 1]:
+            char_selection += 2
+
         screen.print_at(
-            HALF_TOP,
+            char_table[char_selection],
             x_start + x, y_start + y // 2,
-            colour=colours[vram[x, y]],
-            bg=colours[vram[x, y + 1]]
+            colour=colours[1],
+            bg=colours[0]
         )
 
 
