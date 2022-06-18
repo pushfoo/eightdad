@@ -79,7 +79,7 @@ class VideoRam:
         :return: the pixel state at the given coordinate
         """
         x, y = coordinates
-        return self.pixels[y * self.width + x]
+        return bool(self.pixels[y * self.width + x])
 
     def xor_pixel(self, x: int, y: int, value: bool) -> bool:
         """
