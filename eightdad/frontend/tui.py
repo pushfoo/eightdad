@@ -117,10 +117,43 @@ def render_halfchars(
             bg=colours[0]
         )
 
+BRAILLE_TABLE = (
+    (0, 0, 1),
+    (0, 1, 2),
+    (0, 2, 4),
+    (1, 0, 8),
+    (1, 1, 16),
+    (1, 2, 32),
+    (0, 3, 64),
+    (1, 3, 128)
+)
+
+def render_braille(
+        screen: Screen,
+        vm: Chip8VirtualMachine,
+        draw_x_start: int = 0, draw_y_start: int = 1,
+        colours=DEFAULT_COLORS,
+        char_table: Tuple[int, int, int] = BRAILLE_TABLE,
+) -> None:
+    vram = vm.video_ram
+    for x, y in screen_coordinates(vm, x_step=2, y_step=4):
+        char_base_codepoint = 0x2800
+
+        for offset_x, offset_y, bit_mask in char_table:
+            if vram[x + offset_x, y + offset_y]:
+                char_base_codepoint += bit_mask
+
+        screen.print_at(
+            chr(char_base_codepoint),
+            draw_x_start + (x // 2), draw_y_start + (y // 4),
+            colour=colours[1],
+            bg=colours[0]
+        )
+
 
 class AsciimaticsFrontend(Frontend):
 
-    def __init__(self, render_method=render_halfchars):
+    def __init__(self, render_method=render_braille):
         super().__init__()
         self.screen = None
         self.render_method = render_method
@@ -145,7 +178,7 @@ class AsciimaticsFrontend(Frontend):
             if ev in (ord('H'), ord('h')):
                 return
 
-            if ev == ord('p'):
+            if ev == ord(' '):
                 self.paused = not self.paused
 
             if not self.paused:
