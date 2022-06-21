@@ -2,8 +2,10 @@ from setuptools import setup, find_packages
 
 install_requires=[
     'bitarray==2.4.1',
-    'arcade==2.6.13'
+    'arcade==2.6.13',
+    'asciimatics==1.14.0'
 ]
+
 
 tests_require = [
     'pytest',
@@ -35,6 +37,10 @@ setup(
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Interpreters",

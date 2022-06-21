@@ -18,9 +18,14 @@ are not currently supported, but may be added one day.
 
 ### How
 
-#### Installing
+#### Requirements
+1. Python Version >= 3.7
+2. (GUI only) OpenGL 3.3+, Python version < 3.11
+3. (TUI only) Unicode support in your terminal
 
-For the moment, this project requires OpenGL 3.3+ because it uses [arcade](https://github.com/pythonarcade/arcade) for its main frontend. To install, do the following:
+The GUI does not yet work with Python 3.11 due to arcade's dependencies not yet supporting it.
+
+#### Installing
 
 1. Clone this repo locally
 2. [Make a new virtualenv and activate it](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
@@ -34,8 +39,14 @@ Dependencies will be automatically installed.
 *Reminder: only the original CHIP-8 instruction set is supported.*
 
 To run a ROM, make sure you're in the activated virtual environment, then use the following:
+```commandline
+eightdad -r path/to/chip8.rom
 ```
-eightdad -r path/to/file.rom
+
+If you want to use the TUI, run `eightdad-tui` instead.
+
+```commandline
+eightdad-tui -r path/to/chip8.rom
 ```
 
 For additional information, use the help option:
