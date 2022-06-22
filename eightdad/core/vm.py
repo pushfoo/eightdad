@@ -6,7 +6,8 @@ Timer and VM are implemented here.
 """
 from collections import namedtuple
 from copy import copy
-from typing import Tuple, List, ByteString, Iterable, Union, Dict
+from collections.abc import ByteString
+from typing import Tuple, List, Iterable, Union, Dict
 from random import randrange
 
 from eightdad.core.bytecode import (
