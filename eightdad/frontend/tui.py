@@ -17,6 +17,7 @@ Implemented so far:
 from typing import Tuple
 
 from asciimatics.screen import Screen
+from asciimatics.event import KeyboardEvent
 from eightdad.core import Chip8VirtualMachine
 from eightdad.frontend import Frontend
 from eightdad.frontend.common.util import screen_coordinates
@@ -174,29 +175,42 @@ class AsciimaticsFrontend(Frontend):
         screen = screen or self.screen
 
         while True:
-            ev = screen.get_key()
-            if ev in (ord('H'), ord('h')):
-                return
+            ev = screen.get_event()
 
-            if ev == ord(' '):
-                self.paused = not self.paused
+            # handle debug & app keys
+            key_pressed = isinstance(ev, KeyboardEvent)
+            if key_pressed:
+                screen.print_at(f"Pressed: {ev}", x=0, y=0)
+                if ev.key_code in (ord('H'), ord('h')):
+                    return
 
+                if ev.key_code == ord(' '):
+                    self.paused = not self.paused
+
+            # run the frame
             if not self.paused:
-                if ev in self.key_mapping:
-                    self._vm.press(self.key_mapping[ev])
+
+                key_mapped = None
+                if key_pressed:
+                    key_mapped = self.key_mapping[ev.key_code]
+
+                if key_mapped is not None:
+                    self._vm.press(key_mapped)
 
                 for i in range(self._vm.ticks_per_frame):
                     self._vm.tick()
 
-                if ev in self.key_mapping:
-                    self._vm.release(self.key_mapping[ev])
+                # an ugly way to emulate key-up events in the terminal
+                if key_mapped is not None:
+                    self._vm.release(key_mapped)
 
             self.render_method(screen, self._vm)
             screen.refresh()
 
 
 def main() -> None:
-    # keeping these separate prevents Screen from swallowing argparse errors
+    # keeping these separate prevents Screen
+    # from swallowing important argparse errors.
     front = AsciimaticsFrontend()
     Screen.wrapper(front.run)
 
