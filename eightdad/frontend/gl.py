@@ -13,7 +13,7 @@ from arcade import get_projection
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.vm import upper_hex, report_state
 from eightdad.frontend import build_window_title, Frontend
-
+from eightdad.frontend.common.keymap import ControlButton
 
 class ArcadeWindow(arcade.Window):
 
@@ -121,25 +121,34 @@ class ArcadeWindow(arcade.Window):
     def on_key_release(self, symbol: int, modifiers: int):
         if symbol in self.keymap:
             mapped = self.keymap[symbol]
-            self.vm.release(mapped)
+            value = mapped.value
+            if value <= 0xF:
+                self.vm.release(value)
             print(
-                f"Released {chr(symbol)!r}, maps to chip8 key"
-                f"{upper_hex(mapped)}"
+                f"Released {chr(symbol)!r}, maps to control"
+                f"{mapped!r}"
             )
 
     def on_key_press(self, symbol: int, modifiers: int):
-        if symbol in self.keymap:
-            mapped = self.keymap[symbol]
-            self.vm.press(self.keymap[symbol])
+
+        if symbol not in self.keymap:
+            return
+
+        mapped_button = self.keymap[symbol]
+        mapped_value = mapped_button.value
+
+        # if it's a hex key
+        if mapped_value <= 0xF:
+            self.vm.press(mapped_value)
             print(
-                f"Pressed {chr(symbol)!r}, maps to chip8 key"
-                f" {upper_hex(mapped)}"
+                f"Pressed {chr(symbol)!r}, maps to control"
+                f" {mapped_button!r}"
             )
 
-        elif symbol == arcade.key.H:
+        elif mapped_button == ControlButton.QUIT:
             pyglet.app.exit()
 
-        elif symbol == arcade.key.SPACE:
+        elif mapped_button == ControlButton.PAUSE:
             self.paused = not self.paused
 
         if self.paused:

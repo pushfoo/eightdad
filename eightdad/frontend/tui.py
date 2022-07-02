@@ -21,7 +21,7 @@ from asciimatics.event import KeyboardEvent
 from eightdad.core import Chip8VirtualMachine
 from eightdad.frontend import Frontend
 from eightdad.frontend.common.util import screen_coordinates
-
+from eightdad.frontend.common.keymap import ControlButton, to_lower
 
 # unicode escape codes for full block and half block characters. the
 # half-block characters allow a console to emulate square pixels by
@@ -179,30 +179,36 @@ class AsciimaticsFrontend(Frontend):
 
             # handle debug & app keys
             key_pressed = isinstance(ev, KeyboardEvent)
+
+            mapped_button = None
             if key_pressed:
-                screen.print_at(f"Pressed: {ev}", x=0, y=0)
-                if ev.key_code in (ord('H'), ord('h')):
+                mapped_button = self.key_mapping.get(
+                    to_lower(ev.key_code), None)
+
+            if key_pressed:
+                screen.print_at(f"Pressed: {mapped_button}", x=0, y=0)
+                if mapped_button is ControlButton.QUIT:
                     return
 
-                if ev.key_code == ord(' '):
+                if mapped_button is ControlButton.PAUSE:
                     self.paused = not self.paused
 
             # run the frame
             if not self.paused:
 
-                key_mapped = None
-                if key_pressed:
-                    key_mapped = self.key_mapping[ev.key_code]
+                hex_value = None
+                if mapped_button and mapped_button.name.startswith('HEX_'):
+                    hex_value = mapped_button.value
 
-                if key_mapped is not None:
-                    self._vm.press(key_mapped)
+                if hex_value is not None:
+                    self._vm.press(hex_value)
 
                 for i in range(self._vm.ticks_per_frame):
                     self._vm.tick()
 
                 # an ugly way to emulate key-up events in the terminal
-                if key_mapped is not None:
-                    self._vm.release(key_mapped)
+                if hex_value is not None:
+                    self._vm.release(hex_value)
 
             self.render_method(screen, self._vm)
             screen.refresh()

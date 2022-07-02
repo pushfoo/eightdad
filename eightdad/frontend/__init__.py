@@ -3,9 +3,11 @@ import sys
 from abc import ABC, abstractmethod
 from typing import Union, Set
 
+
 from eightdad.core import Chip8VirtualMachine, VideoRam
-from eightdad.frontend.common.keymap import build_hexkey_mapping
+from eightdad.frontend.common.keymap import load_key_map
 from eightdad.frontend.common.util import clean_path, load_rom_to_vm
+
 
 BASE_ARG_PARSER = argparse.ArgumentParser(
     description='EightDAD Chip-8 Emulator')
@@ -15,6 +17,7 @@ BASE_ARG_PARSER.add_argument(
 BASE_ARG_PARSER.add_argument(
     '-P', '--start-paused', help="Start the VM paused", action='store_true')
 BASE_ARG_PARSER.set_defaults(start_paused=False)
+
 
 def build_window_title(paused: bool, current_file) -> str:
     """
@@ -59,7 +62,7 @@ class Frontend(ABC):
         self.load_vm(self.launch_args['rom_file'])
 
         self._tick_rate = 1.0 / 30
-        self._key_mapping = build_hexkey_mapping()
+        self._key_mapping = load_key_map()
 
     @property
     @abstractmethod
