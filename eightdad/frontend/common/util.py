@@ -13,16 +13,19 @@ def screen_coordinates(
         y_step: int = 1
     ) -> Iterator[Tuple[int, int]]:
     """
-    Sugar method for generating all screen coordinates for a VM's vram.
+    Generator yielding screen coordinates within a VM's video RAM.
+
+    The step parameters are useful for renderers which handle chunks of
+    pixels rather than single pixels.
 
     :param vm: the VM to access the video ram for
-    :param x_step: how much to step x by each time
-    :param y_step: how much to step y by each time
+    :param x_step: how many pixels to step x by each time
+    :param y_step: how many pixels to step y by each time
     """
     vram = vm.video_ram
     for x in range(0, vram.width, x_step):
         for y in range(0, vram.height, y_step):
-            yield (x, y)
+            yield x, y
 
 
 def clean_path(raw_path: PathOrStr) -> Path:
