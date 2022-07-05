@@ -4,8 +4,7 @@ Core VM-related functionality for executing programs
 Timer and VM are implemented here.
 
 """
-from collections import namedtuple
-from copy import copy
+from dataclasses import dataclass
 from typing import Tuple, Iterable, Union
 from random import randrange
 
@@ -76,16 +75,25 @@ def upper_hex(src: Union[int, Iterable[int]]) -> str:
     return "".join((upper_hex(i) for i in src))
 
 
-VMState = namedtuple(
-    'VMState', [
-        'program_counter',
-        'next_instruction',
-        'v_registers',
-        'timers',
-        'stack',
-        'keys'
-    ],
-)
+@dataclass
+class VMState:
+    program_counter: int
+    next_instruction: int
+    v_registers: Tuple[
+        int, int, int, int,
+        int, int, int, int,
+        int, int, int, int,
+        int, int, int, int
+    ]
+    delay_timer: int
+    sound_timer: int
+    stack: Tuple[int, ...]
+    keys: Tuple[
+        bool, bool, bool, bool,
+        bool, bool, bool, bool,
+        bool, bool, bool, bool,
+        bool, bool, bool, bool
+    ]
 
 
 def report_state(state: VMState):
@@ -297,10 +305,11 @@ class Chip8VirtualMachine:
         return VMState(
             pc,
             next_instruction,
-            copy(self.v_registers),
-            {'delay_timer': self.delay_timer, 'sound_timer': self.sound_timer},
-            copy(self.call_stack),
-            copy(self._keystates)
+            tuple(self.v_registers),
+            self.delay_timer,
+            self.sound_timer,
+            tuple(self.call_stack),
+            tuple(self._keystates)
         )
 
     def skip_next_instruction(self):
