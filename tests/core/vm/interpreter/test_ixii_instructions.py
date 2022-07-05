@@ -13,6 +13,7 @@ import pytest
 from itertools import product, chain
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.video import DEFAULT_DIGITS
+from eightdad.core.vm import DIGIT_HEIGHT
 from tests.util import load_and_execute_instruction
 
 EXECUTION_START = 512
@@ -155,7 +156,7 @@ def test_fx29_load_address_for_digit_sprite_to_i(
         load_and_execute_instruction(vm, 0xF029, x=source_register)
         i = vm.i_register
 
-        assert vm.memory[i:i+vm.digit_length] ==\
+        assert vm.memory[i:i+DIGIT_HEIGHT] ==\
             DEFAULT_DIGITS[digit_to_sprite]
 
 

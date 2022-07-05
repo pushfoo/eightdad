@@ -6,10 +6,10 @@ Timer and VM are implemented here.
 """
 from collections import namedtuple
 from copy import copy
-from collections.abc import ByteString
-from typing import Tuple, List, Iterable, Union, Dict
+from typing import Tuple, Iterable, Union
 from random import randrange
 
+from eightdad.types import Buffer, DigitTooTall, DigitTooWide
 from eightdad.core.bytecode import (
     PATTERN_IXII,
     PATTERN_INNN,
@@ -21,8 +21,12 @@ from eightdad.core.bytecode import (
 from eightdad.core.bytecode import Chip8Instruction
 from eightdad.core.video import VideoRam, DEFAULT_DIGITS
 
-DEFAULT_EXECUTION_START = 0x200
 
+# Constant according to the mattmik spec
+DIGIT_HEIGHT = 5  # 5 lines / bytes of data
+
+
+DEFAULT_EXECUTION_START = 0x200
 INSTRUCTION_LENGTH = 2 # 2 bytes, 16 bits
 
 
@@ -98,21 +102,21 @@ def report_state(state: VMState):
 
 class Chip8VirtualMachine:
 
-    def load_to_memory(self, data: ByteString, location: int) -> None:
+    def load_to_memory(self, data: Buffer, location: int) -> None:
         """
         Load given data to a specific location in memory.
 
-        Data must be a ByteString or support the buffer protocol.
+        Data must be a ByteString or otherwise support the buffer protocol.
 
         Raises IndexError if data is too long to be inserted at the passed
-        location, ie would extend past the end of memory.
+        location due to extending past the end of memory.
 
         :param data: a bytestring that supports buffer protocol
         :param location: where in memory to load to
         :return:
         """
         if location < 0:
-            raise IndexError("Location must be positive")
+            raise IndexError("Location must be 0 or greater")
 
         end = location + len(data)
         if end > len(self.memory):
@@ -123,29 +127,58 @@ class Chip8VirtualMachine:
             view = memoryview(data)
         except Exception as e:
             raise TypeError(
-                "data must be a ByteString or otherwise support the "
-                "buffer protocol."
+                f"{data!r} does not support the buffer protocol."
             ) from e
 
         self.memory[location:end] = view
 
-    def load_digits(self, source: List[bytes], location: int) -> None:
+    def load_digits(
+            self,
+            raw_digit_data: Iterable[Buffer],
+            location: int
+    ) -> None:
         """
-        Load hex digit data into a location memory.
+        Load bitmap font data for hex digits to a memory location.
 
-        The largest digit size is used as the digit length.
+        Although digits are treated as normal sprites when drawn, they
+        are expected to be 4 pixels wide by 5 pixels tall according to
+        mattmik's Chip-8 Technical Reference.
 
-        :param source: the list of bytes objects to load from.
-        :param location: where in memory to load the data
-        :return: None
+        :param raw_digit_data: 16 buffer protocol objects in an iterable
+        :param location: start address to load to
         """
+
+        self.digits_memory_location = None
+
+        digits = tuple(raw_digit_data)
+        digits_length = len(digits)
+
+        if digits_length != 16:
+            raise IndexError(
+                f"Digit data must have exactly 16 entries but got"
+                f" {digits_length} instead."
+            )
+
+        current_load_start = location
+
+        for digit_index, digit_data in enumerate(raw_digit_data):
+            if len(digit_data) > DIGIT_HEIGHT:
+                raise DigitTooTall(
+                    f"Digit {digit_index} must be 5 lines or fewer, but"
+                    f"got {digit_data!r}"
+                )
+
+            for byte_index, byte in enumerate(digit_data):
+                if byte & 0x0F:
+                    raise DigitTooWide(
+                        f"Digit {upper_hex(digit_index)} too wide on"
+                        f" line index {byte_index}: {bin(byte)}"
+                    )
+
+            self.load_to_memory(digit_data, current_load_start)
+            current_load_start += DIGIT_HEIGHT
+
         self.digits_memory_location = location
-        self.digit_length = max(map(len, source))
-
-        current_start = location
-        for digit_data in source:
-            self.load_to_memory(digit_data, current_start)
-            current_start += self.digit_length
 
     def __init__(
             self,
@@ -192,7 +225,7 @@ class Chip8VirtualMachine:
 
         self.video_ram = video_ram_type(width, height, display_wrap)
 
-        self.digits_memory_location, self.digit_length = 0, 0
+        self.digits_memory_location: int = None
         self.load_digits(DEFAULT_DIGITS, digit_start)
 
         # set up execution-related state
@@ -311,7 +344,7 @@ class Chip8VirtualMachine:
             elif lo_byte == 0x29:  # Fx29, I = Address of digit for value in Vx
                 digit = self.v_registers[x]
                 self.i_register = self.digits_memory_location +\
-                                  (digit * self.digit_length)
+                                  (digit * DIGIT_HEIGHT)
 
             # Store BCD of Vx at I, I+1, I+2
             elif lo_byte == 0x33:

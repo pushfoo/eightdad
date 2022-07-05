@@ -1,5 +1,11 @@
 import pytest
 from eightdad.core import Chip8VirtualMachine as VM
+from eightdad.types import DigitTooTall, DigitTooWide
+
+
+@pytest.fixture
+def vm():
+    return VM()
 
 
 class TestLoadDataToMemoryLocation:
@@ -39,8 +45,27 @@ class TestLoadDataToMemoryLocation:
         assert vm.memory[0x200:0x204] == data
 
 
+class TestLoadDigitData:
 
+    @pytest.mark.parametrize('bad_data_length', (1, 17))
+    def test_load_digits_raises_index_error_when_data_too_short(
+            self,
+            vm,
+            bad_data_length
+    ):
+        with pytest.raises(IndexError):
+            vm.load_digits([b"\xFF"] * 5, 0)
 
+    def test_load_digits_raises_digit_too_tall_when_digit_tall(self, vm):
+        with pytest.raises(DigitTooTall):
+            vm.load_digits([b"\1\1\1\1\1\1"] * 16, 0)
 
+    def test_load_digits_raises_digit_too_wide_when_digit_wide(self, vm):
+        with pytest.raises(DigitTooWide):
+            vm.load_digits([bytes([0b11111000])] * 16, 0)
 
+    def test_load_digits_works_when_digit_data_valid(self, vm):
+        digit_data = [b"\xF0\xF0\xF0\xF0\xF0" for i in range(16)]
+        vm.load_digits(digit_data, 0)
+        assert vm.memory[0:5*16] == b''.join(digit_data)
 

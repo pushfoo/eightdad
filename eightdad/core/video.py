@@ -9,7 +9,8 @@ general use.
 """
 from typing import Tuple
 from itertools import islice
-from bitarray import util as ba_util
+from bitarray import bitarray
+from bitarray.util import zeros
 
 DEFAULT_DIGITS = [
     b'\xf0\x90\x90\x90\xf0',
@@ -58,10 +59,10 @@ class VideoRam:
         self.height = height
         self.wrap = wrap
 
-        # Note that the endian argument here is *bit* endianness specifying
-        # bit order, not the byte endianess you normally see. See the bitarray
-        # documentation for more details.
-        self.pixels = ba_util.zeros(width * height, endian='big')
+        # Note that the endian argument here is *bit* endianness
+        # specifying bit order, not the byte endianess you normally see.
+        # See the bitarray documentation for more details.
+        self.pixels: bitarray = zeros(width * height, endian='big')
 
     @property
     def size(self) -> Tuple[int, int]:
