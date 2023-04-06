@@ -8,7 +8,6 @@ library. Original is under MIT license.
 import arcade
 import pyglet
 from arcade.gl import geometry
-from arcade import get_projection
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.vm import upper_hex, report_state
@@ -70,7 +69,7 @@ class ArcadeWindow(arcade.Window):
         # get a bytestring that can be written to GL texture
         self.screen_buffer = memoryview(self.vm.video_ram.pixels)
 
-        self.program['projection'] = get_projection()
+        self.program['projection'] = self.projection
         self.program['screen'] = 0
 
         self.quad = geometry.screen_rectangle(0, 0, self.width, self.height)

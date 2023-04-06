@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 install_requires=[
     'bitarray==2.4.1',
-    'arcade==2.6.15',
+    'arcade==3.0.0dev19',
     'asciimatics==1.14.0'
 ]
 
@@ -17,7 +17,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='eightdad',
-    version='0.0.1',
+    version='0.1.0',
     packages=find_packages(),
     entry_points={
         "console_scripts": [
