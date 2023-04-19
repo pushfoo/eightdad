@@ -14,6 +14,7 @@ from eightdad.core.vm import upper_hex, report_state
 from eightdad.frontend import build_window_title, Frontend
 from eightdad.frontend.common.keymap import ControlButton
 
+
 class ArcadeWindow(arcade.Window):
 
     def __init__(
