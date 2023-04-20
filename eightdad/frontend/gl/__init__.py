@@ -7,8 +7,9 @@ library. Original is under MIT license.
 """
 from pathlib import Path
 
-import arcade
 import pyglet
+import arcade
+from arcade.types import RGBA255, Color
 from arcade.gl import geometry
 
 from eightdad.core import Chip8VirtualMachine
@@ -19,9 +20,13 @@ from eightdad.frontend.common.keymap import ControlButton
 from eightdad.types import PathLike
 
 
+# Shader & default config constants
 SHADER_ROOT = Path(__file__).parent
 VERTEX_SHADER_PATH = SHADER_ROOT / "vertex_shader.glsl"
 FRAGMENT_SHADER_PATH = SHADER_ROOT / "fragment_shader.glsl"
+
+DEFAULT_OFF_PIXEL_COLOR = Color.from_hex_string("#b05e00")
+DEFAULT_ON_PIXEL_COLOR = Color.from_hex_string("#ffc400")
 
 
 def _read_shader_source_from(path: PathLike) -> str:
@@ -38,37 +43,44 @@ class ArcadeWindow(arcade.Window):
             current_file: str,
             keymap,
             paused: bool = False,
+            off_pixel_color: RGBA255 = DEFAULT_OFF_PIXEL_COLOR,
+            on_pixel_color: RGBA255 = DEFAULT_ON_PIXEL_COLOR,
             vertex_shader_path: PathLike = VERTEX_SHADER_PATH,
             fragment_shader_path: PathLike = FRAGMENT_SHADER_PATH
     ):
+        # Non-GL setup
         super().__init__(
             width, height,
             build_window_title(paused, current_file)
         )
         self._paused = paused
         self._current_file = current_file
+        self.vm = vm
+        self.keymap = keymap
+        self.update_rate = 1.0 / 30
 
-        self.vm: Chip8VirtualMachine = vm
-
+        # Attempt to load & compile shaders
         vertex_shader = _read_shader_source_from(vertex_shader_path)
         fragment_shader = _read_shader_source_from(fragment_shader_path)
-
-        # from einarf's original
-        self.program = self.ctx.program(
+        self.program = program = self.ctx.program(
             vertex_shader=vertex_shader,
             fragment_shader=fragment_shader
         )
-        self.keymap = keymap
 
-        # get a bytestring that can be written to GL texture
-        self.screen_buffer = memoryview(self.vm.video_ram.pixels)
-
-        self.program['projection'] = self.projection
-        self.program['screen'] = 0
-
+        # Allocate resources for use in shaders
         self.quad = geometry.screen_rectangle(0, 0, self.width, self.height)
         self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
-        self.update_rate = 1.0 / 30
+
+        # Ideally, this would use .toreadonly() on the memoryview, but
+        # there's an unclosed ctypes ticket blocking this.
+        # https://github.com/python/cpython/issues/72832
+        self.screen_buffer = memoryview(self.vm.video_ram.pixels)
+
+        # Bind resources to shader program inputs
+        program['projection'] = self.projection
+        program['off_pixel_color'] = Color.from_iterable(off_pixel_color).normalized
+        program['on_pixel_color'] = Color.from_iterable(on_pixel_color).normalized
+        program['raw_vm_pixels'] = 0
 
     @property
     def paused(self) -> bool:

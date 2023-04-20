@@ -2,8 +2,9 @@
 // Based on einarf's original proof of concept from the arcade library
 
 uniform mat4 projection;
-in vec2 in_vert;
-in vec2 in_uv;
+in      vec2 in_vert;
+in      vec2 in_uv;
+
 out vec2 v_uv;
 
 void main() {
