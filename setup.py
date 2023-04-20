@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 install_requires=[
     'bitarray==2.4.1',
-    'arcade==3.0.0dev19',
+    'arcade==3.0.0dev20',
     'asciimatics==1.14.0'
 ]
 
