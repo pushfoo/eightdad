@@ -1,13 +1,14 @@
 import argparse
 import sys
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Union, Set
 
 
 from eightdad.core import Chip8VirtualMachine, VideoRam
 from eightdad.frontend.common.keymap import load_key_map
 from eightdad.frontend.common.util import clean_path, load_rom_to_vm
-
+from eightdad.types import PathLike
 
 BASE_ARG_PARSER = argparse.ArgumentParser(
     description='EightDAD Chip-8 Emulator')
@@ -19,15 +20,17 @@ BASE_ARG_PARSER.add_argument(
 BASE_ARG_PARSER.set_defaults(start_paused=False)
 
 
-def build_window_title(paused: bool, current_file) -> str:
+def build_window_title(paused: bool, current_file: PathLike, show_full: bool = False) -> str:
     """
     Returns a neatly formatted window title.
 
     :param bool paused: whether the VM is currently paused
-    :param current_file: the name of the file to display
+    :param current_file: the current file path to display
+    :param show_full: whether to show the full path
     :return str: a neatly formatted window title
     """
-    return f"EightDAD {'(PAUSED)' if paused else '-'} {current_file}"
+    final = Path(current_file) if show_full else Path(current_file).name
+    return f"EightDAD {'(PAUSED)' if paused else '-'} {final}"
 
 
 def exit_with_error(msg: str, error_code: int = 1) -> None:
