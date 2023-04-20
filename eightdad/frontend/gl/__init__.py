@@ -5,6 +5,8 @@ A modified version of einarf's Chip-8 display example in the arcade
 library. Original is under MIT license.
 
 """
+from pathlib import Path
+
 import arcade
 import pyglet
 from arcade.gl import geometry
@@ -13,6 +15,18 @@ from eightdad.core import Chip8VirtualMachine
 from eightdad.core.vm import upper_hex, report_state
 from eightdad.frontend import build_window_title, Frontend
 from eightdad.frontend.common.keymap import ControlButton
+
+from eightdad.types import PathLike
+
+
+SHADER_ROOT = Path(__file__).parent
+VERTEX_SHADER_PATH = SHADER_ROOT / "vertex_shader.glsl"
+FRAGMENT_SHADER_PATH = SHADER_ROOT / "fragment_shader.glsl"
+
+
+def _read_shader_source_from(path: PathLike) -> str:
+    path = Path(path).resolve()
+    return path.read_text()
 
 
 class ArcadeWindow(arcade.Window):
@@ -23,7 +37,9 @@ class ArcadeWindow(arcade.Window):
             vm: Chip8VirtualMachine,
             current_file: str,
             keymap,
-            paused: bool = False
+            paused: bool = False,
+            vertex_shader_path: PathLike = VERTEX_SHADER_PATH,
+            fragment_shader_path: PathLike = FRAGMENT_SHADER_PATH
     ):
         super().__init__(
             width, height,
@@ -34,36 +50,13 @@ class ArcadeWindow(arcade.Window):
 
         self.vm: Chip8VirtualMachine = vm
 
+        vertex_shader = _read_shader_source_from(vertex_shader_path)
+        fragment_shader = _read_shader_source_from(fragment_shader_path)
+
         # from einarf's original
         self.program = self.ctx.program(
-            vertex_shader="""
-                    #version 330
-                    uniform mat4 projection;
-                    in vec2 in_vert;
-                    in vec2 in_uv;
-                    out vec2 v_uv;
-                    void main() {
-                        gl_Position = projection * vec4(in_vert, 0.0, 1.0);
-                        v_uv = in_uv;
-                    }
-                    """,
-            fragment_shader="""
-                    #version 330
-                    // Unsigned integer sampler for reading uint data from texture
-                    uniform usampler2D screen;
-                    in vec2 v_uv;
-                    out vec4 out_color;
-                    void main() {
-                        // Calculate the bit position on the x axis
-                        uint bit_pos = uint(round((v_uv.x * 64) - 0.5)) % 8u;
-                        // Create bit mask we can AND the fragment with to extract the pixel value
-                        uint flag = uint(pow(2u, 7u - bit_pos));
-                        // Read the fragment value (We reverse the y axis here as well)
-                        uint frag = texture(screen, v_uv * vec2(1.0, -1.0)).r;
-                        // Write the pixel value. Values above 1 will be clamped to 1.
-                        out_color = vec4(vec3(frag & flag), 1.0);
-                    }
-                    """
+            vertex_shader=vertex_shader,
+            fragment_shader=fragment_shader
         )
         self.keymap = keymap
 
