@@ -19,8 +19,8 @@ are not currently supported, but may be added one day.
 ### How
 
 #### Requirements
-1. Python Version >= 3.7
-2. (GUI only) OpenGL 3.3+, Python version < 3.11
+1. Python Version >= 3.8
+2. (GUI only) OpenGL 3.3+, Python version < 3.12
 3. (TUI only) Unicode support in your terminal
 
 The GUI does not yet work with Python 3.11 due to arcade's dependencies not yet supporting it.
