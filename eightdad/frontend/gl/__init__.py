@@ -17,7 +17,7 @@ from eightdad.core.vm import upper_hex, report_state
 from eightdad.frontend import build_window_title, Frontend
 from eightdad.frontend.common.keymap import ControlButton
 
-from eightdad.types import PathLike
+from eightdad.types import Buffer, PathLike
 
 
 # Shader & default config constants
@@ -32,6 +32,59 @@ DEFAULT_ON_PIXEL_COLOR = Color.from_hex_string("#ffc400")
 def _read_shader_source_from(path: PathLike) -> str:
     path = Path(path).resolve()
     return path.read_text()
+
+
+class RenderArea(arcade.Section):
+
+    def __init__(
+            self, left: int, bottom: int, width: int, height: int,
+            raw_pixel_buffer: Buffer,
+            off_pixel_color: RGBA255 = arcade.color.BLACK,
+            on_pixel_color: RGBA255 = arcade.color.WHITE,
+            vertex_shader_path = VERTEX_SHADER_PATH,
+            fragment_shader_path = FRAGMENT_SHADER_PATH,
+            **kwargs
+    ):
+        super().__init__(left, bottom, width, height, **kwargs)
+
+        # Keep this around for convenience since arcade doesn't use
+        # more than one window.
+        self.ctx = self.window.ctx
+
+        # Ideally, this would use .toreadonly() on the memoryview, but
+        # there's an unclosed ctypes ticket blocking this.
+        # https://github.com/python/cpython/issues/72832
+        self.screen_buffer = memoryview(raw_pixel_buffer)
+
+        # Load, compile, & configure shaders
+        vertex_shader = _read_shader_source_from(vertex_shader_path)
+        fragment_shader = _read_shader_source_from(fragment_shader_path)
+        program = self.ctx.program(
+            vertex_shader=vertex_shader,
+            fragment_shader=fragment_shader
+        )
+        program['raw_vm_pixels'] = 0
+        program['off_pixel_color'] = Color.from_iterable(off_pixel_color).normalized
+        program['on_pixel_color'] = Color.from_iterable(on_pixel_color).normalized
+        program['projection'] = self.ctx.projection
+        program['screen'] = 0
+
+        # Store program if nothing went wrong
+        self.program = program
+        # Allocate the relevant GL resources
+        self.texture = self.window.ctx.texture((8, 32), components=1, dtype='i1')
+        self.quad: arcade.gl.Geometry = geometry.screen_rectangle(left, bottom, width, height)
+
+    def on_resize(self, width: int, height: int):
+        self.quad = geometry.screen_rectangle(self.left, self.bottom, width, height)
+
+    def on_draw(self):
+        self.texture.use(0)
+        self.quad.render(self.program)
+
+    def on_update(self, delta_time: float):
+        self.texture.use()
+        self.texture.write(self.screen_buffer)
 
 
 class ArcadeWindow(arcade.Window):
@@ -55,32 +108,13 @@ class ArcadeWindow(arcade.Window):
         )
         self._paused = paused
         self._current_file = current_file
-        self.vm = vm
+        self.vm: Chip8VirtualMachine = vm
         self.keymap = keymap
         self.update_rate = 1.0 / 30
 
-        # Attempt to load & compile shaders
-        vertex_shader = _read_shader_source_from(vertex_shader_path)
-        fragment_shader = _read_shader_source_from(fragment_shader_path)
-        self.program = program = self.ctx.program(
-            vertex_shader=vertex_shader,
-            fragment_shader=fragment_shader
-        )
 
-        # Allocate resources for use in shaders
-        self.quad = geometry.screen_rectangle(0, 0, self.width, self.height)
-        self.texture = self.ctx.texture((8, 32), components=1, dtype='i1')
 
-        # Ideally, this would use .toreadonly() on the memoryview, but
-        # there's an unclosed ctypes ticket blocking this.
-        # https://github.com/python/cpython/issues/72832
-        self.screen_buffer = memoryview(self.vm.video_ram.pixels)
 
-        # Bind resources to shader program inputs
-        program['projection'] = self.projection
-        program['off_pixel_color'] = Color.from_iterable(off_pixel_color).normalized
-        program['on_pixel_color'] = Color.from_iterable(on_pixel_color).normalized
-        program['raw_vm_pixels'] = 0
 
     @property
     def paused(self) -> bool:
@@ -115,13 +149,13 @@ class ArcadeWindow(arcade.Window):
                     print("INSTRUCTION UNHANDLED!")
                     self.paused = True
 
-        self.texture.use(0)
-        self.texture.write(self.screen_buffer)  # type: ignore
+        # self.texture.use(0)
+        # self.texture.write(self.screen_buffer)  # type: ignore
 
     def on_draw(self):
         self.clear()
-        self.texture.use(0)
-        self.quad.render(self.program)
+        # self.texture.use(0)
+        # self.quad.render(self.program)
 
     def on_key_release(self, symbol: int, modifiers: int):
         if symbol in self.keymap:
