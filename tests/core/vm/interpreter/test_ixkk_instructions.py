@@ -3,7 +3,11 @@ from itertools import product
 from unittest.mock import patch
 from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.core.vm import INSTRUCTION_LENGTH
-from tests.util import load_and_execute_instruction, fullbits_generator
+
+
+load_and_execute_instruction = pytest.helpers.load_and_execute_instruction
+fullbits_generator = pytest.helpers.fullbits_generator
+
 
 EXECUTION_STARTS = (0x200,0x500,0xF00)
 NIBBLE_VALUES = (0, 0xA, 0xD)

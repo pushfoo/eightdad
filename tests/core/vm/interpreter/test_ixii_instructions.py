@@ -14,7 +14,9 @@ from itertools import product, chain
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.video import DEFAULT_DIGITS
 from eightdad.core.vm import DIGIT_HEIGHT
-from tests.util import load_and_execute_instruction
+
+load_and_execute_instruction = pytest.helpers.load_and_execute_instruction
+
 
 EXECUTION_START = 512
 TWO_HUNDREDTH = 1.0 / 200

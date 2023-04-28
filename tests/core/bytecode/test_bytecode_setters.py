@@ -5,8 +5,8 @@ from itertools import product
 
 import pytest
 from eightdad.core.bytecode import Chip8Instruction as Instruction
-from tests.util import dict_to_argtuples
 
+dict_to_argtuples = pytest.helpers.dict_to_argtuples
 ATTR_NAMES = ("nnn", "x", "y", "kk", "n")
 
 

@@ -2,8 +2,11 @@ import pytest
 from itertools import product
 from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
-from tests.util import load_and_execute_instruction as load_and_execute
-from tests.util import load_multiple
+
+
+load_multiple = pytest.helpers.load_multiple
+load_and_execute = pytest.helpers.load_and_execute_instruction
+
 
 # should find a way to make this a configurable project-wide fixture
 KEYS_AND_REGISTERS = list(product(range(0,1), range(0,1)))

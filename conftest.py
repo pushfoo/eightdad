@@ -1,3 +1,4 @@
+import pytest
 from itertools import product
 from typing import Tuple, Any, Iterable, Dict
 
@@ -6,6 +7,7 @@ from eightdad.core.bytecode import Chip8Instruction as Instruction
 from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
 
 
+@pytest.helpers.register
 def dict_to_argtuples(
     src: Dict[Tuple,Iterable[Any]]
 ) -> Iterable[Tuple]:
@@ -29,6 +31,7 @@ def dict_to_argtuples(
     return (prefix + (suffix, ) for prefix, suffix  in out_raw)
 
 
+@pytest.helpers.register
 def load_instruction(
     vm: Chip8VirtualMachine,
     template: int,
@@ -51,6 +54,8 @@ def load_instruction(
 
     i.pack_into(vm.memory, offset=load_point)
 
+
+@pytest.helpers.register
 def load_multiple(
     vm: Chip8VirtualMachine,
     *instructions,
@@ -83,6 +88,8 @@ def load_multiple(
             )
         current_location += INSTRUCTION_LENGTH
 
+
+@pytest.helpers.register
 def load_and_execute_instruction(
     vm: Chip8VirtualMachine,
     template: int,
@@ -107,6 +114,7 @@ def load_and_execute_instruction(
     vm.tick(1/200.0)
 
 
+@pytest.helpers.register
 def registers_untouched(
         vm: Chip8VirtualMachine,
         registers: Iterable[int]
@@ -121,6 +129,7 @@ def registers_untouched(
     return all(map(lambda x: vm.v_registers[x] == 0, registers))
 
 
+@pytest.helpers.register
 def other_registers_untouched(
         vm: Chip8VirtualMachine,
         touched_registers: Iterable[int],
@@ -143,6 +152,7 @@ def other_registers_untouched(
     )
 
 
+@pytest.helpers.register
 def fullbits_generator(max_num_bits: int):
     """
     Generate a range of values from 0 to 2 ** max_num_bits
@@ -158,7 +168,3 @@ def fullbits_generator(max_num_bits: int):
         yield bits
         bits <<= 1
         bits |= 1
-
-
-
-

@@ -1,6 +1,8 @@
 import pytest
 from eightdad.core import Chip8VirtualMachine
-from tests.util import load_and_execute_instruction
+
+
+load_and_execute_instruction = pytest.helpers.load_and_execute_instruction
 
 
 @pytest.mark.parametrize(

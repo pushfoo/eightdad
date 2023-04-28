@@ -3,7 +3,11 @@ from itertools import product
 import pytest
 from eightdad.core import Chip8VirtualMachine as VM
 from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
-from tests.util import load_and_execute_instruction, other_registers_untouched, fullbits_generator
+
+
+load_and_execute_instruction = pytest.helpers.load_and_execute_instruction
+other_registers_untouched = pytest.helpers.other_registers_untouched
+fullbits_generator = pytest.helpers.fullbits_generator
 
 
 class Test5XY0SkipsIfVxEqualsVy:
@@ -113,7 +117,6 @@ class Test9XY0SkipsIfVxNotEqualsVy:
 
         assert vm.program_counter ==\
                DEFAULT_EXECUTION_START + INSTRUCTION_LENGTH
-
 
 
 class Test8XY0SetsVxToVy:
