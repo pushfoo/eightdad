@@ -1,8 +1,6 @@
 """
 Test setters on instruction class
 """
-from itertools import product
-
 import pytest
 from eightdad.core.bytecode import Chip8Instruction as Instruction
 
@@ -48,13 +46,8 @@ def test_setters_raise_valueerror_on_too_big(
 LESS_THAN_ZERO = (-1, -5)
 
 
-@pytest.mark.parametrize(
-    "attr_name,too_small_value",
-    product(
-        ATTR_NAMES,
-        LESS_THAN_ZERO
-    )
-)
+@pytest.mark.parametrize('attr_name', ATTR_NAMES)
+@pytest.mark.parametrize('too_small_value', LESS_THAN_ZERO)
 def test_setters_raise_valueerror_on_too_small(
     attr_name,
     too_small_value
@@ -68,6 +61,7 @@ def test_setters_raise_valueerror_on_too_small(
 
 VALID_4BIT = (0x0, 0x1, 0xF)
 VALID_8BIT = VALID_4BIT + (0x10, 0xFF)
+VALID_12BIT = VALID_4BIT + (0xAAA, 0xFFF)
 
 
 @pytest.mark.parametrize(
@@ -78,7 +72,7 @@ VALID_8BIT = VALID_4BIT + (0x10, 0xFF)
             ("y", 0x8006): VALID_4BIT,
             ("n", 0xD000): VALID_4BIT,
             ("kk", 0x3000): VALID_8BIT,
-            ("nnn", 0x1000): VALID_8BIT + (0xAAA, 0xFFF)
+            ("nnn", 0x1000): VALID_12BIT
         }
     )
 )

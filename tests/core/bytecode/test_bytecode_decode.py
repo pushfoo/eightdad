@@ -1,5 +1,4 @@
 import pytest
-from struct import Struct
 from eightdad.core.bytecode import Chip8Instruction as Instruction
 
 

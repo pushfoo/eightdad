@@ -1,6 +1,6 @@
 import pytest
 from itertools import product
-from typing import Tuple, Any, Iterable, Dict
+from typing import Tuple, Any, Iterable, Dict, Generator
 
 from eightdad.core import Chip8VirtualMachine
 from eightdad.core.bytecode import Chip8Instruction as Instruction
@@ -10,18 +10,13 @@ from eightdad.core.vm import DEFAULT_EXECUTION_START, INSTRUCTION_LENGTH
 @pytest.helpers.register
 def dict_to_argtuples(
     src: Dict[Tuple,Iterable[Any]]
-) -> Iterable[Tuple]:
+) -> Generator[Tuple, None, None]:
     """
-
     Turn structured parameter dicts into legible test case parameters.
-
-    The odd return typing is so pycharm stops flagging the generator
-    expression return as a non-generator.
 
     The generator yields one set of testcase parameters per tuple. This
     ensures the user can tell what specific data caused a test case to
     fail while still allowing compact expression of test parameters.
-
     """
     out_raw = []
 
