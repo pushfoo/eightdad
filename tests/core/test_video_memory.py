@@ -2,7 +2,23 @@ import pytest
 
 from typing import Generator, Tuple
 from itertools import product
+
 from eightdad.core import VideoRam
+
+ALLOW_SKIP_WHEN_DEBUGGER_ENABLED = True
+
+
+def should_skip_because_debugger_active() -> bool:
+    """
+    Skip if a debugger is believed to be active.
+
+    C-backed functions which allocate RAM are not guaranteed to return zeroed
+    RAM on all systems. In some cases, Some functions, specifically ones which
+    allocate C-backed RAM, will pre-zero RAM when called from within a debugger.
+    This means any test for zeroing RAM will always pass inside such a debugger.
+    :return:
+    """
+    return ALLOW_SKIP_WHEN_DEBUGGER_ENABLED and pytest.helpers.debugger_active()
 
 
 def all_coordinates(vram: VideoRam) -> Generator[Tuple[int, int], None, None]:
@@ -16,56 +32,57 @@ def all_coordinates(vram: VideoRam) -> Generator[Tuple[int, int], None, None]:
         yield coord
 
 
-class TestConstructor:
-    @pytest.mark.parametrize(
-        "height,width,wrap",
-        product(
-            [3, 20, 1],
-            [3, 20, 1],
-            [True, False]
-        )
-    )
-    def test_ok_value(self, height, width, wrap):
+VALID_SINGLE_DIM_VALUES = (1, 3, 20)
+INVALID_SINGLE_DIM_VALUES = (0, -1, 3)
+INVALID_DIM_PAIRS = tuple(filter(
+    lambda pair: pair[0] <= 0 or pair[1] <= 0,
+    product(INVALID_SINGLE_DIM_VALUES, INVALID_SINGLE_DIM_VALUES)
+))
+
+
+@pytest.mark.parametrize("wrap", [True, False])
+class TestInitArgumentHandling:
+
+    @pytest.mark.parametrize("height", VALID_SINGLE_DIM_VALUES)
+    @pytest.mark.parametrize("width", VALID_SINGLE_DIM_VALUES)
+    def test_vram_init_sets_valid_values_from_arguments(self, height, width, wrap):
         """Constructor accepts legal values, including edge cases"""
-        v = VideoRam(width, height)
-        assert not v.wrap
+        v = VideoRam(width, height, wrap)
+
         assert v.width == width
         assert v.height == height
-
-        v = VideoRam(width, height, wrap)
         assert v.wrap == wrap
 
-    @pytest.mark.parametrize(
-        "height,width,wrap",
-        product(
-            [0, -1, 3],
-            [0, -1, 3],
-            [True, False]
-        )
-    )
-    def test_bad_values(self, height, width, wrap):
+    @pytest.mark.parametrize("height,width", INVALID_DIM_PAIRS)
+    def test_vram_init_rejects_bad_values(self, height, width, wrap):
         """Negative and zero dimensions raise ValueErrors regardless of wrap"""
         if height < 1 or width < 1:
             with pytest.raises(ValueError):
                 VideoRam(height, width, wrap)
 
-    def test_zeroed_on_creation(self):
-        """
-        *Attempt* to check whether coordinates are cleared on creation.
 
-        IMPORTANT: This assumes that the code isn't being run in a debugger.
-        Doing so may cause the test to pass erroneously because running c
-        extensions with the python debugger may cause allocated memory to
-        always be pre-zeroed rather than possibly containing arbitrary data.
+@pytest.mark.skipif(
+    should_skip_because_debugger_active(),
+    reason="Debugger believed to zero RAM is active, test is meaningless"
+)
+def test_vram_zeroes_on_creation():
+    """
+    *Attempt* to check whether coordinates are cleared on creation.
 
-        This test also currently assumes 400x400 vram is enough to have a
-        reasonable chance of being allocated non-zeroed memory.
-        """
+    IMPORTANT: This assumes the code isn't being run in a debugger!
 
-        # not sure how big a space is needed to ensure we get unzeroed ram
-        v = VideoRam(400, 400)
-        for x, y in all_coordinates(v):
-            assert not v.pixels[y * v.width + x]
+    Doing so may cause the test to pass erroneously because running c
+    extensions with a python debugger may cause allocated memory to
+    always be pre-zeroed rather than possibly containing arbitrary data.
+
+    This test also currently assumes 400x400 vram is enough to have a
+    reasonable chance of being allocated non-zeroed memory.
+    """
+
+    # not sure how big a space is needed to ensure we get unzeroed ram
+    v = VideoRam(400, 400)
+    for x, y in all_coordinates(v):
+        assert not v.pixels[y * v.width + x]
 
 
 class TestSizeProperty:
