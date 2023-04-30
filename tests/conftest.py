@@ -1,3 +1,4 @@
+import sys
 import pytest
 from itertools import product
 from typing import Tuple, Any, Iterable, Dict, Generator
@@ -24,6 +25,16 @@ def dict_to_argtuples(
         out_raw.extend(product((prefix,), suffixes))
 
     return (prefix + (suffix, ) for prefix, suffix  in out_raw)
+
+
+@pytest.helpers.register
+def debugger_active() -> bool:
+    """Check whether a debugger appears to be active."""
+
+    # Debuggers are intended to check the gettrace attribute of sys when active
+    # https://docs.python.org/3/library/sys.html#sys.gettrace
+    gettrace = getattr(sys, 'gettrace', None)
+    return gettrace is None
 
 
 @pytest.helpers.register
