@@ -186,14 +186,15 @@ class TestDraw:
         # blit a blank sprite
         v.draw_sprite(0, 0, b"\0" * v.height)
 
-        # ensure no flipping occured
+        # ensure all pixels are still on
         for pixel_value in v.pixels:
             assert pixel_value
 
-    def test_blank_sprite_doesnt_report_unsetting_pixels(self):
+    def test_drawing_blank_sprite_doesnt_report_unsetting_pixels(self):
         """Drawing a blank sprite doesn't unset pixels in the affected area"""
         v = VideoRam(8, 4)
 
+        # Turn all pixels on
         for i in range(len(v.pixels)):
             v.pixels[i] = True
 
