@@ -10,12 +10,11 @@ ALLOW_SKIP_WHEN_DEBUGGER_ENABLED = True
 
 def should_skip_because_debugger_active() -> bool:
     """
-    Skip if a debugger is believed to be active.
+    Return True if skipping on debuggers is enabled & a debugger is detected.
 
-    C-backed functions which allocate RAM are not guaranteed to return zeroed
-    RAM on all systems. In some cases, Some functions, specifically ones which
-    allocate C-backed RAM, will pre-zero RAM when called from within a debugger.
-    This means any test for zeroing RAM will always pass inside such a debugger.
+    C-backed functions which allocate RAM may return unusually zeroed memory
+    when called from within a debugger. This causes any test for zeroing RAM
+    to falsely pass, so these should be skipped when inside such a debugger.
     :return:
     """
     return ALLOW_SKIP_WHEN_DEBUGGER_ENABLED and pytest.helpers.debugger_active()
