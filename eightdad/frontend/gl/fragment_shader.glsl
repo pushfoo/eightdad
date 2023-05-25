@@ -8,7 +8,8 @@ uniform vec4       off_pixel_color;
 uniform vec4       on_pixel_color;
 uniform usampler2D raw_vm_pixels;  // unsigned sampler reading from texture
 
-out vec4 out_color;
+// Outputs
+out vec4           out_color;
 
 
 void main() {
