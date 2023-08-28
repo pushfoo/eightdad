@@ -1,6 +1,6 @@
 # EightDAD
 
-[![PyTest](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml)
+[![PyTest](https://github.com/pushfoo/eightdad/actions/workflows/tests.yaml/badge.svg)](https://github.com/pushfoo/eightdad/actions/workflows/tests.yaml)
 [![License](https://img.shields.io/badge/License-BSD_2--Clause-brightgreen.svg)](https://opensource.org/licenses/BSD-2-Clause)
 
 ## Overview
