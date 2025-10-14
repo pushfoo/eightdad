@@ -1,20 +1,21 @@
 [project]
 name = "eightdad"
-version = "0.1.1"
+version = "0.2.0"
 readme = "README.md"
 description = "Chip-8 interpreter which might one day also have other tools"
 authors = [
     {name="pushfoo"}
 ]
 license = {file = "LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers=[
     "Development Status :: 2 - Pre-Alpha",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Interpreters",
@@ -22,8 +23,8 @@ classifiers=[
 ]
 
 dependencies = [
-    'bitarray==2.4.1',
-    'arcade==3.0.0dev20',
+    'bitarray==3.7.2',
+    'arcade==3.3.3',
     'asciimatics==1.14.0'
 ]
 
